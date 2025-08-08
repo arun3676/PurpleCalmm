@@ -12,6 +12,7 @@ import MigraineScreen from './screens/MigraineScreen';
 import JournalScreen from './screens/JournalScreen';
 import JournalTrendsScreen from './screens/JournalTrendsScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import CatChatScreen from './screens/CatChatScreen';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   Journal: undefined;
   JournalTrends: undefined;
   Settings: undefined;
+  CatChat: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -59,6 +61,7 @@ export default function App() {
               <Stack.Screen name="Journal" component={JournalScreen} />
               <Stack.Screen name="JournalTrends" component={JournalTrendsScreen} />
               <Stack.Screen name="Settings" component={SettingsScreen} />
+              <Stack.Screen name="CatChat" component={CatChatScreen} />
             </Stack.Navigator>
           </ThemedNavContainer>
         </ThemeProvider>

@@ -68,8 +68,8 @@ export async function playLoop(name: NamedSound, volume = 0.5): Promise<SoundLik
       } catch {}
     }
     if (name === 'purr') return webLoopPurr(volume);
-    if (name === 'rain') return noiseNode(volume, 1200, 0.9);
-    if (name === 'waterfall') return noiseNode(volume, 3000, 0.3);
+    if (name === 'rain') return noiseNode(volume, 1000, 0.6); // softer pink-ish
+    if (name === 'waterfall') return noiseNode(volume, 2500, 0.2); // brown-ish wideband
     return null;
   }
   try {

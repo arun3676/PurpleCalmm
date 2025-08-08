@@ -73,6 +73,17 @@ export default function MigraineScreen({ navigation }: Props) {
         </View>
       </View>
 
+      <View style={{ marginTop: 24, backgroundColor: colors.surface, borderRadius: 12, padding: 12 }}>
+        <Text style={[textStyles.h2, { color: colors.text }]}>Quick Tips</Text>
+        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 6 }]}> 
+          • Dim the screen (done) and lower volume.{"\n"}
+          • Sip water every ~10 min (enable reminder).{"\n"}
+          • Try cool compress on neck or warm on hands.{"\n"}
+          • Breathe 4 in / 6 out for 1 minute.{"\n"}
+          • If new or severe symptoms appear suddenly, seek medical care.
+        </Text>
+      </View>
+
       <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center' }}>
         <Text style={[textStyles.h2, { color: colors.text }]}>Timer: </Text>
         {[15, 30, 45].map(v => (

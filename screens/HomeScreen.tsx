@@ -60,6 +60,8 @@ export default function HomeScreen({ navigation }: Props) {
         {!cuddling && <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 2 }]}>Tap & hold the cat to cuddle</Text>}
       </View>
 
+      <Card title="Cat Chat" subtitle="Talk to Mochi when anxious" onPress={() => navigation.navigate('CatChat')} />
+
       <Card title="Calm" subtitle="4-7-8 breathing, grounding, chimes" onPress={() => navigation.navigate('Calm')} />
       <Card title="Sleep" subtitle="Wind-down, bedside mode, gentle alarm" onPress={() => navigation.navigate('Sleep')} />
       <Card title="Migraine" subtitle="Ultra-dim, soothing sounds, timer" onPress={() => navigation.navigate('Migraine')} />
