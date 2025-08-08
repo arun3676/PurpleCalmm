@@ -4,7 +4,7 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useKeepAwake } from 'expo-keep-awake';
-import { playLoop, stopAndUnload, playOneShot } from '../utils/audio';
+import { playLoop, stopAndUnload, playOneShot, goodNightTaeVibe } from '../utils/audio';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
 
@@ -52,6 +52,7 @@ export default function SleepScreen({ navigation }: Props) {
     setHolding(false);
     await stopAndUnload(anchor);
     await playOneShot('chime', 0.5);
+    await goodNightTaeVibe();
   }
 
   return (
@@ -85,6 +86,7 @@ export default function SleepScreen({ navigation }: Props) {
           >
             <Text style={[textStyles.bodyMedium, { color: colors.text }]}>{holding ? 'Release' : 'Press & Hold'}</Text>
           </Pressable>
+          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 6 }]}>You’ll hear “good night” when you release</Text>
 
           {/* Dim overlay must not block touches */}
           <View style={{ position: 'absolute', backgroundColor: colors.background, opacity: 0.4, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }} />

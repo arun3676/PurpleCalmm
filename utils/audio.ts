@@ -1,5 +1,6 @@
 import { Audio, AVPlaybackSource } from 'expo-av';
 import { Platform } from 'react-native';
+import * as Speech from 'expo-speech';
 
 type NamedSound = 'purr' | 'rain' | 'jazz' | 'chime' | 'ocean' | 'waterfall' | 'alarm';
 const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
@@ -104,4 +105,32 @@ export async function stopAndUnload(sound: any) {
     if (typeof sound.stopAsync === 'function') await sound.stopAsync();
     if (typeof sound.unloadAsync === 'function') await sound.unloadAsync();
   } catch {}
+}
+
+export async function speak(text: string, opts?: { lang?: string; pitch?: number; rate?: number }) {
+  try {
+    await Speech.speak(text, {
+      language: opts?.lang ?? 'en-US',
+      pitch: opts?.pitch ?? 0.95,
+      rate: opts?.rate ?? 0.95
+    });
+    return;
+  } catch {}
+  // Web fallback if expo-speech fails
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = opts?.lang ?? 'en-US';
+      u.pitch = opts?.pitch ?? 1;
+      u.rate = opts?.rate ?? 1;
+      window.speechSynthesis.speak(u);
+    }
+  } catch {}
+}
+
+export async function goodNightTaeVibe() {
+  // Try Korean first, then English
+  // "잘 자요" = good night (polite)
+  try { await speak('잘 자요', { lang: 'ko-KR', pitch: 0.95, rate: 0.95 }); }
+  catch { await speak('Good night', { lang: 'en-US', pitch: 0.9, rate: 0.9 }); }
 }
