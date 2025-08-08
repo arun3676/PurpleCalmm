@@ -19,7 +19,6 @@ export default function SleepScreen({ navigation }: Props) {
   useEffect(() => {
     async function run() {
       await soft();
-      // simple wind-down wait
       await new Promise(res => setTimeout(res, 20000));
       await new Promise(res => setTimeout(res, 10000));
       await playOneShot('chime', 0.3);
@@ -86,7 +85,7 @@ export default function SleepScreen({ navigation }: Props) {
           >
             <Text style={[textStyles.bodyMedium, { color: colors.accent }]}>Press & Hold</Text>
           </Pressable>
-          <View style={{ position: 'absolute', backgroundColor: colors.background, opacity: 0.4, top: 0, left: 0, right: 0, bottom: 0 }} />
+          <View style={{ position: 'absolute', backgroundColor: colors.background, opacity: 0.4, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }} />
         </View>
       ) : null}
     </View>
