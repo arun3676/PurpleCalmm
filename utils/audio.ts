@@ -1,17 +1,23 @@
 import { Audio, AVPlaybackSource } from 'expo-av';
 import { Platform } from 'react-native';
-import * as Speech from 'expo-speech';
 
-type NamedSound = 'purr' | 'rain' | 'jazz' | 'chime' | 'ocean' | 'waterfall' | 'alarm';
+type NamedSound = 'softpurr' | 'ocean' | 'drizzle' | 'windchimes' | 'brown' | 'chime';
 const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
-  // Later you can add real files:
-  // purr: require('../assets/purr.mp3'),
-  // rain: require('../assets/rain.mp3'),
-  // waterfall: require('../assets/waterfall.mp3'),
-  // chime: require('../assets/chime.mp3'),
+  // Optional real files later:
+  // ocean: require('../assets/ocean.mp3'),
+  // softpurr: require('../assets/purr.mp3'),
+  // drizzle: require('../assets/rain.mp3'),
+  // windchimes: require('../assets/chime.mp3'),
+  // brown: require('../assets/brown.mp3'),
+  // chime: require('../assets/ting.mp3'),
 };
 
-type SoundLike = any;
+type WebNode = {
+  stopAsync: () => Promise<void>;
+  unloadAsync: () => Promise<void>;
+  setVolume?: (v: number) => void;
+};
+type SoundLike = any | WebNode;
 
 let webCtx: AudioContext | null = null;
 function ctx() {
@@ -20,58 +26,164 @@ function ctx() {
   webCtx = C ? new C() : null;
   return webCtx!;
 }
-async function webResume() {
-  const c = ctx();
-  if (!c) return null;
-  if (c.state !== 'running') await c.resume();
-  return c;
-}
-function webLoopPurr(volume: number) {
+async function webResume() { const c = ctx(); if (!c) return null; if (c.state !== 'running') await c.resume(); return c; }
+
+function makeGain(v: number) {
   const c = ctx(); if (!c) return null;
-  const gain = c.createGain(); gain.gain.value = volume; gain.connect(c.destination);
-  const osc = c.createOscillator(); const lfo = c.createOscillator(); const lfoGain = c.createGain();
-  osc.type = 'sine'; osc.frequency.value = 55;
-  lfo.type = 'sine'; lfo.frequency.value = 2;
-  gain.gain.value = volume * 0.7; lfoGain.gain.value = volume * 0.3;
-  lfo.connect(lfoGain).connect(gain.gain); osc.connect(gain);
-  osc.start(); lfo.start();
-  return { stopAsync: async () => { try { osc.stop(); lfo.stop(); } catch {} }, unloadAsync: async () => {} };
+  const g = c.createGain(); g.gain.value = v; g.connect(c.destination); return g;
 }
-function noiseNode(volume: number, centerHz: number, q = 0.8) {
+function noiseBuffer(color: 'white'|'pink'|'brown') {
   const c = ctx(); if (!c) return null;
-  const gain = c.createGain(); gain.gain.value = volume; gain.connect(c.destination);
-  const size = 2 * c.sampleRate; const buffer = c.createBuffer(1, size, c.sampleRate);
-  const data = buffer.getChannelData(0); for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
-  const src = c.createBufferSource(); src.buffer = buffer; src.loop = true;
-  const bpf = c.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = centerHz; bpf.Q.value = q;
-  src.connect(bpf).connect(gain); src.start();
-  return { stopAsync: async () => { try { src.stop(); } catch {} }, unloadAsync: async () => {} };
-}
-function webOneShotChime(volume: number) {
-  const c = ctx(); if (!c) return null;
-  const osc = c.createOscillator(); const gain = c.createGain();
-  osc.type = 'sine'; osc.frequency.setValueAtTime(880, c.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(440, c.currentTime + 0.6);
-  gain.gain.value = volume; gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.8);
-  osc.connect(gain).connect(c.destination); osc.start(); osc.stop(c.currentTime + 0.8);
-  return { stopAsync: async () => {}, unloadAsync: async () => {} };
+  const size = 2 * c.sampleRate; const buf = c.createBuffer(1, size, c.sampleRate);
+  const data = buf.getChannelData(0);
+  if (color === 'white') { for (let i=0;i<size;i++) data[i] = Math.random()*2-1; }
+  else if (color === 'pink') {
+    // simple pink filter
+    let b0=0,b1=0,b2=0; for (let i=0;i<size;i++) { const w = Math.random()*2-1;
+      b0 = 0.99765*b0 + w*0.0990460;
+      b1 = 0.96300*b1 + w*0.2965164;
+      b2 = 0.57000*b2 + w*1.0526913;
+      data[i] = b0 + b1 + b2 + w*0.1848;
+    }
+  } else {
+    // brown
+    let last=0; for (let i=0;i<size;i++) { const w=(Math.random()*2-1); last = (last + 0.02*w)/1.02; data[i]=last*3.5; }
+  }
+  return buf;
 }
 
-export async function playLoop(name: NamedSound, volume = 0.5): Promise<SoundLike | null> {
+// --- Soundscapes (web) ---
+function webOcean(volume: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const gain = makeGain(volume)!;
+
+  // Brown noise through slow lowpass wobble
+  const src = c.createBufferSource(); src.buffer = noiseBuffer('brown')!; src.loop = true;
+  const lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 600;
+  const lfo = c.createOscillator(); const lfoGain = c.createGain();
+  lfo.type='sine'; lfo.frequency.value = 0.08; lfoGain.gain.value = 500; // slow swell
+  lfo.connect(lfoGain).connect(lp.frequency);
+  src.connect(lp).connect(gain);
+
+  src.start(); lfo.start();
+
+  return {
+    stopAsync: async () => { try { src.stop(); lfo.stop(); } catch {} },
+    unloadAsync: async () => {},
+    setVolume: (v: number) => { gain.gain.value = v; }
+  };
+}
+
+function webSoftPurr(volume: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const gain = makeGain(volume)!;
+
+  // Two low sines beating + mild tremolo
+  const a = c.createOscillator(), b = c.createOscillator(), trem = c.createOscillator(), tremGain = c.createGain();
+  a.type='sine'; b.type='sine'; a.frequency.value=50; b.frequency.value=52.1;
+  trem.type='sine'; trem.frequency.value=1.8; tremGain.gain.value = volume*0.35; // subtle
+  trem.connect(tremGain).connect(gain.gain);
+  a.connect(gain); b.connect(gain);
+  a.start(); b.start(); trem.start();
+
+  return {
+    stopAsync: async () => { try { a.stop(); b.stop(); trem.stop(); } catch {} },
+    unloadAsync: async () => {},
+    setVolume: (v:number) => { gain.gain.value = v; tremGain.gain.value = v*0.35; }
+  };
+}
+
+function webDrizzle(volume: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const gain = makeGain(volume)!;
+  // Pink noise + random "drop" bursts (HP filtered)
+  const bed = c.createBufferSource(); bed.buffer = noiseBuffer('pink')!; bed.loop = true;
+  const hp = c.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 800;
+  bed.connect(hp).connect(gain);
+  bed.start();
+
+  // sporadic drops
+  const interval = setInterval(() => {
+    const src = c.createBufferSource(); src.buffer = noiseBuffer('white')!;
+    const bpf = c.createBiquadFilter(); bpf.type='bandpass'; bpf.frequency.value = 1500 + Math.random()*1500; bpf.Q.value=8;
+    const g = c.createGain(); g.gain.value = volume*0.12;
+    src.connect(bpf).connect(g).connect(gain);
+    src.start(); src.stop(c.currentTime + 0.08 + Math.random()*0.12);
+  }, 220 + Math.random()*160);
+
+  return {
+    stopAsync: async () => { try { clearInterval(interval); bed.stop(); } catch {} },
+    unloadAsync: async () => {},
+    setVolume: (v:number) => { gain.gain.value = v; }
+  };
+}
+
+function webWindChimes(volume: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const gain = makeGain(volume)!;
+
+  // Random gentle chime tones with decay
+  function ping(freq: number) {
+    const osc = c.createOscillator(); const g = c.createGain();
+    osc.type='sine'; osc.frequency.value = freq;
+    g.gain.value = volume*0.6;
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 1.8);
+    osc.connect(g).connect(gain); osc.start(); osc.stop(c.currentTime + 1.8);
+  }
+  const tones = [523, 659, 784, 987]; // C5 E5 G5 B5ish
+  const interval = setInterval(() => { ping(tones[Math.floor(Math.random()*tones.length)]); }, 1700 + Math.random()*1500);
+
+  // subtle airy bed
+  const air = c.createBufferSource(); air.buffer = noiseBuffer('pink')!; air.loop = true;
+  const lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 2500;
+  air.connect(lp).connect(gain); air.start();
+
+  return {
+    stopAsync: async () => { try { clearInterval(interval); air.stop(); } catch {} },
+    unloadAsync: async () => {},
+    setVolume: (v:number) => { gain.gain.value = v; }
+  };
+}
+
+function webBrown(volume: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const gain = makeGain(volume)!;
+  const src = c.createBufferSource(); src.buffer = noiseBuffer('brown')!; src.loop = true;
+  src.connect(gain); src.start();
+  return {
+    stopAsync: async () => { try { src.stop(); } catch {} },
+    unloadAsync: async () => {},
+    setVolume: (v:number) => { gain.gain.value = v; }
+  };
+}
+
+function webChime(vol: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const osc = c.createOscillator(); const g = c.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(880, c.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(440, c.currentTime + 0.6);
+  g.gain.value = vol; g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.8);
+  osc.connect(g).connect(c.destination); osc.start(); osc.stop(c.currentTime + 0.8);
+  return { stopAsync: async () => {}, unloadAsync: async () => {}, setVolume: ()=>{} };
+}
+
+// --- Public API ---
+export async function playLoop(name: NamedSound, volume = 0.4): Promise<SoundLike | null> {
   if (Platform.OS === 'web') {
     await webResume();
     if (sources[name]) {
-      try {
-        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      try { await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
         const { sound } = await Audio.Sound.createAsync(sources[name]!, { isLooping: true, volume });
-        await sound.playAsync(); return sound;
-      } catch {}
+        await sound.playAsync(); return sound; } catch {}
     }
-    if (name === 'purr') return webLoopPurr(volume);
-    if (name === 'rain') return noiseNode(volume, 1000, 0.6); // softer pink-ish
-    if (name === 'waterfall') return noiseNode(volume, 2500, 0.2); // brown-ish wideband
+    if (name === 'ocean') return webOcean(volume);
+    if (name === 'softpurr') return webSoftPurr(volume);
+    if (name === 'drizzle') return webDrizzle(volume);
+    if (name === 'windchimes') return webWindChimes(volume);
+    if (name === 'brown') return webBrown(volume);
     return null;
   }
+  // Native: requires real files to sound great; will try if provided
   try {
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     const { sound } = await Audio.Sound.createAsync(sources[name]!, { isLooping: true, volume });
@@ -82,13 +194,11 @@ export async function playLoop(name: NamedSound, volume = 0.5): Promise<SoundLik
 export async function playOneShot(name: NamedSound, volume = 0.7): Promise<SoundLike | null> {
   if (Platform.OS === 'web') {
     await webResume();
-    if (name === 'chime') return webOneShotChime(volume);
+    if (name === 'chime') return webChime(volume);
     if (sources[name]) {
-      try {
-        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      try { await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
         const { sound } = await Audio.Sound.createAsync(sources[name]!, { isLooping: false, volume });
-        await sound.playAsync(); return sound;
-      } catch { return null; }
+        await sound.playAsync(); return sound; } catch { return null; }
     }
     return null;
   }
@@ -107,30 +217,10 @@ export async function stopAndUnload(sound: any) {
   } catch {}
 }
 
-export async function speak(text: string, opts?: { lang?: string; pitch?: number; rate?: number }) {
+export async function setVolume(sound: any, v: number) {
   try {
-    await Speech.speak(text, {
-      language: opts?.lang ?? 'en-US',
-      pitch: opts?.pitch ?? 0.95,
-      rate: opts?.rate ?? 0.95
-    });
-    return;
+    if (!sound) return;
+    if (typeof sound.setVolumeAsync === 'function') await sound.setVolumeAsync(v);
+    if (typeof sound.setVolume === 'function') sound.setVolume(v);
   } catch {}
-  // Web fallback if expo-speech fails
-  try {
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = opts?.lang ?? 'en-US';
-      u.pitch = opts?.pitch ?? 1;
-      u.rate = opts?.rate ?? 1;
-      window.speechSynthesis.speak(u);
-    }
-  } catch {}
-}
-
-export async function goodNightTaeVibe() {
-  // Try Korean first, then English
-  // "잘 자요" = good night (polite)
-  try { await speak('잘 자요', { lang: 'ko-KR', pitch: 0.95, rate: 0.95 }); }
-  catch { await speak('Good night', { lang: 'en-US', pitch: 0.9, rate: 0.9 }); }
 }
