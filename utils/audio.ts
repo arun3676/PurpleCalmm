@@ -2,13 +2,13 @@ import { Audio, AVPlaybackSource, Sound } from 'expo-av';
 
 type NamedSound = 'purr' | 'rain' | 'jazz' | 'chime' | 'ocean' | 'waterfall' | 'alarm';
 
+// Remote, lightweight ambient samples to make the app audible without bundling assets.
+// You can later replace any of these with local files via require('../assets/xxx.mp3').
 const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
-  // Add local assets later if you want richer sounds
-  // Example:
-  // purr: require('../assets/purr.mp3'),
-  // rain: require('../assets/rain.mp3'),
-  // waterfall: require('../assets/waterfall.mp3'),
-  // chime: require('../assets/chime.mp3')
+  purr: { uri: 'https://cdn.jsdelivr.net/gh/purrplecalm/cdn@main/audio/purr.mp3' },
+  rain: { uri: 'https://cdn.jsdelivr.net/gh/purrplecalm/cdn@main/audio/rain.mp3' },
+  waterfall: { uri: 'https://cdn.jsdelivr.net/gh/purrplecalm/cdn@main/audio/waterfall.mp3' },
+  chime: { uri: 'https://cdn.jsdelivr.net/gh/purrplecalm/cdn@main/audio/chime.mp3' }
 };
 
 export async function playLoop(name: NamedSound, volume = 0.5): Promise<Sound | null> {
