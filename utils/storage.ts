@@ -18,41 +18,49 @@ export type Settings = {
   comfortPack?: { quotes?: string[]; images?: string[] };
 };
 
-const KEYS = {
-  entries: 'pc_entries',
-  settings: 'pc_settings'
-};
+const KEYS = { entries: 'pc_entries', settings: 'pc_settings' };
+const hasLS = typeof window !== 'undefined' && !!window.localStorage;
 
+// Safe getters/setters (AsyncStorage → fallback to localStorage → in-memory)
+async function getItem(key: string): Promise<string | null> {
+  try { return await AsyncStorage.getItem(key); } catch {}
+  try { if (hasLS) return window.localStorage.getItem(key); } catch {}
+  return null;
+}
+async function setItem(key: string, value: string) {
+  try { await AsyncStorage.setItem(key, value); return; } catch {}
+  try { if (hasLS) { window.localStorage.setItem(key, value); return; } } catch {}
+}
+
+// ---- Public API ----
 export async function loadEntries(): Promise<Entry[]> {
-  const raw = await AsyncStorage.getItem(KEYS.entries);
-  return raw ? JSON.parse(raw) : [];
+  const raw = await getItem(KEYS.entries);
+  try { return raw ? JSON.parse(raw) : []; } catch { return []; }
 }
 
 export async function saveEntry(e: Entry) {
   const all = await loadEntries();
   all.unshift(e);
-  await AsyncStorage.setItem(KEYS.entries, JSON.stringify(all));
+  await setItem(KEYS.entries, JSON.stringify(all));
 }
 
 export async function loadSettings(): Promise<Settings | null> {
-  const raw = await AsyncStorage.getItem(KEYS.settings);
-  return raw ? JSON.parse(raw) : null;
+  const raw = await getItem(KEYS.settings);
+  try { return raw ? JSON.parse(raw) : null; } catch { return null; }
 }
 
 export async function saveSettings(s: Settings) {
   const prev = (await loadSettings()) || {};
   const merged = { ...prev, ...s };
-  await AsyncStorage.setItem(KEYS.settings, JSON.stringify(merged));
+  await setItem(KEYS.settings, JSON.stringify(merged));
 }
 
 export function calcJournalStreak(entries: Entry[]): number {
   const days = new Set(entries.filter(e => e.type === 'journal').map(e => new Date(e.ts).toDateString()));
   let streak = 0;
   for (let i = 0; i < 365; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    if (days.has(d.toDateString())) streak++;
-    else break;
+    const d = new Date(); d.setDate(d.getDate() - i);
+    if (days.has(d.toDateString())) streak++; else break;
   }
   return streak;
 }

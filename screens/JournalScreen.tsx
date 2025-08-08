@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import { View, Text, Pressable, TextInput, Platform } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
@@ -31,7 +31,9 @@ export default function JournalScreen({ navigation }: Props) {
       ts: Date.now()
     });
     await success();
-    navigation.goBack();
+    if (Platform.OS === 'web') alert('Saved!');
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('Home');
   }
 
   return (
