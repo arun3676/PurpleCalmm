@@ -1,9 +1,11 @@
 import { Audio, AVPlaybackSource, Sound } from 'expo-av';
+import { Platform } from 'react-native';
 
 type NamedSound = 'purr' | 'rain' | 'jazz' | 'chime' | 'ocean' | 'waterfall' | 'alarm';
 
-// Remote, lightweight ambient samples to make the app audible without bundling assets.
-// You can later replace any of these with local files via require('../assets/xxx.mp3').
+let webUnlocked = Platform.OS !== 'web';
+
+// Remote, lightweight ambient samples
 const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   purr: { uri: 'https://cdn.jsdelivr.net/gh/purrplecalm/cdn@main/audio/purr.mp3' },
   rain: { uri: 'https://cdn.jsdelivr.net/gh/purrplecalm/cdn@main/audio/rain.mp3' },
@@ -11,8 +13,23 @@ const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   chime: { uri: 'https://cdn.jsdelivr.net/gh/purrplecalm/cdn@main/audio/chime.mp3' }
 };
 
+async function ensureUnlocked() {
+  if (webUnlocked) return true;
+  try {
+    // Create a silent sound to satisfy gesture policy, called from button/press handlers
+    const { sound } = await Audio.Sound.createAsync(undefined, { volume: 0 });
+    await sound.unloadAsync();
+    webUnlocked = true;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function playLoop(name: NamedSound, volume = 0.5): Promise<Sound | null> {
   try {
+    const ok = await ensureUnlocked();
+    if (!ok) return null;
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     const src = sources[name];
     const { sound } = await Audio.Sound.createAsync(src ?? undefined, { isLooping: true, volume });
@@ -25,6 +42,8 @@ export async function playLoop(name: NamedSound, volume = 0.5): Promise<Sound | 
 
 export async function playOneShot(name: NamedSound, volume = 0.7): Promise<Sound | null> {
   try {
+    const ok = await ensureUnlocked();
+    if (!ok) return null;
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     const src = sources[name];
     const { sound } = await Audio.Sound.createAsync(src ?? undefined, { isLooping: false, volume });
