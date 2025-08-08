@@ -1,0 +1,11 @@
+{
+  "cli": { "version": ">= 3.21.0" },
+  "build": {
+    "preview": { "distribution": "internal" },
+    "production": {
+      "android": { "buildType": "app-bundle" },
+      "ios": { "simulator": false }
+    }
+  },
+  "submit": { "production": {} }
+}
