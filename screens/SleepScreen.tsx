@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Switch, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, Switch } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
@@ -13,19 +13,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Sleep'>;
 export default function SleepScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
   const [bedside, setBedside] = useState(false);
-  const [purr, setPurr] = useState<Sound | null>(null);
-  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const [purr, setPurr] = useState<Sound | any | null>(null);
+  const [anchor, setAnchor] = useState<Sound | any | null>(null);
+  const [holding, setHolding] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     async function run() {
       await soft();
-      await new Promise(res => setTimeout(res, 20000));
-      await new Promise(res => setTimeout(res, 10000));
-      await playOneShot('chime', 0.3);
+      // tiny wind-down cue
+      await new Promise(res => setTimeout(res, 3000));
       await success();
     }
     run();
-    return () => { stopAndUnload(purr); };
+    return () => { stopAndUnload(purr); stopAndUnload(anchor); };
   }, []);
 
   useKeepAwake();
@@ -34,24 +35,23 @@ export default function SleepScreen({ navigation }: Props) {
     (async () => {
       stopAndUnload(purr);
       if (bedside) {
-        const s = await playLoop('purr', 0.2);
+        const s = await playLoop('purr', 0.15);
         setPurr(s);
       }
     })();
   }, [bedside]);
 
-  function handlePressIn() {
-    if (pressTimer.current) clearTimeout(pressTimer.current);
-    pressTimer.current = setTimeout(() => {
-      playOneShot('chime', 0.4);
-    }, 600);
+  async function onPressIn() {
+    setHolding(true);
+    // start a slightly louder purr as an "anchor tone" while held
+    const a = await playLoop('purr', 0.35);
+    setAnchor(a);
   }
 
-  function handlePressOut() {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
+  async function onPressOut() {
+    setHolding(false);
+    await stopAndUnload(anchor);
+    await playOneShot('chime', 0.5);
   }
 
   return (
@@ -59,6 +59,7 @@ export default function SleepScreen({ navigation }: Props) {
       <Pressable onPress={() => navigation.goBack()}>
         <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
       </Pressable>
+
       <View style={{ alignItems: 'center', marginTop: 24 }}>
         <Text style={[textStyles.h1, { color: colors.text }]}>Sleep</Text>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>Wind-down and bedside mode</Text>
@@ -75,16 +76,17 @@ export default function SleepScreen({ navigation }: Props) {
       {bedside ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 64, marginBottom: 12 }}>🐱</Text>
-          <Text style={[textStyles.body, { color: colors.mutedText }]}>Hold to Anchor</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText }]}>{holding ? 'Anchoring…' : 'Hold to Anchor'}</Text>
           <Pressable
-            onLongPress={() => playOneShot('chime', 0.4)}
-            delayLongPress={600}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            style={{ marginTop: 12 }}
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
+            style={{ marginTop: 12, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 14, backgroundColor: colors.primaryDark }}
+            hitSlop={20}
           >
-            <Text style={[textStyles.bodyMedium, { color: colors.accent }]}>Press & Hold</Text>
+            <Text style={[textStyles.bodyMedium, { color: colors.text }]}>{holding ? 'Release' : 'Press & Hold'}</Text>
           </Pressable>
+
+          {/* Dim overlay must not block touches */}
           <View style={{ position: 'absolute', backgroundColor: colors.background, opacity: 0.4, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }} />
         </View>
       ) : null}
