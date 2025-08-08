@@ -33,7 +33,7 @@ export default function CalmScreen({ navigation }: Props) {
   const [phase, setPhase] = useState(0);
   const [cycle, setCycle] = useState(0);
   const [showGrounding, setShowGrounding] = useState(false);
-  const progress = useSharedValue(0);
+  const progress = useSharedValue(0); // 0 = small, 1 = large
   const [chime, setChime] = useState<Sound | null>(null);
   const size = Math.min(Dimensions.get('window').width, 320);
 
@@ -45,15 +45,29 @@ export default function CalmScreen({ navigation }: Props) {
   useEffect(() => {
     let mounted = true;
     async function run() {
+      // Start small
+      progress.value = 0;
+
       for (let c = 0; c < 2; c++) {
-        for (let p = 0; p < steps.length; p++) {
-          if (!mounted) return;
-          setPhase(p);
-          if (p === 0) await soft();
-          progress.value = withTiming(1, { duration: reduceMotion ? 200 : steps[p].ms, easing: Easing.inOut(Easing.ease) });
-          await new Promise(res => setTimeout(res, steps[p].ms));
-          progress.value = withTiming(0, { duration: 10 });
-        }
+        // Inhale -> grow to large
+        if (!mounted) return;
+        setPhase(0);
+        await soft();
+        progress.value = withTiming(1, { duration: reduceMotion ? 200 : inhale, easing: Easing.inOut(Easing.ease) });
+        await new Promise(res => setTimeout(res, reduceMotion ? 200 : inhale));
+
+        // Hold -> stay large
+        if (!mounted) return;
+        setPhase(1);
+        progress.value = withTiming(1, { duration: reduceMotion ? 200 : hold, easing: Easing.linear });
+        await new Promise(res => setTimeout(res, reduceMotion ? 200 : hold));
+
+        // Exhale -> shrink to small
+        if (!mounted) return;
+        setPhase(2);
+        progress.value = withTiming(0, { duration: reduceMotion ? 200 : exhale, easing: Easing.inOut(Easing.ease) });
+        await new Promise(res => setTimeout(res, reduceMotion ? 200 : exhale));
+
         setCycle(prev => prev + 1);
         const s = await playOneShot('chime', 0.4);
         setChime(s);

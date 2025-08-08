@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Switch } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable, Switch, Platform } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
@@ -14,11 +14,12 @@ export default function SleepScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
   const [bedside, setBedside] = useState(false);
   const [purr, setPurr] = useState<Sound | null>(null);
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    let mounted = true;
     async function run() {
       await soft();
+      // simple wind-down wait
       await new Promise(res => setTimeout(res, 20000));
       await new Promise(res => setTimeout(res, 10000));
       await playOneShot('chime', 0.3);
@@ -39,6 +40,20 @@ export default function SleepScreen({ navigation }: Props) {
       }
     })();
   }, [bedside]);
+
+  function handlePressIn() {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = setTimeout(() => {
+      playOneShot('chime', 0.4);
+    }, 600);
+  }
+
+  function handlePressOut() {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
@@ -62,7 +77,13 @@ export default function SleepScreen({ navigation }: Props) {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 64, marginBottom: 12 }}>🐱</Text>
           <Text style={[textStyles.body, { color: colors.mutedText }]}>Hold to Anchor</Text>
-          <Pressable onLongPress={() => playOneShot('chime', 0.4)} style={{ marginTop: 12 }}>
+          <Pressable
+            onLongPress={() => playOneShot('chime', 0.4)}
+            delayLongPress={600}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={{ marginTop: 12 }}
+          >
             <Text style={[textStyles.bodyMedium, { color: colors.accent }]}>Press & Hold</Text>
           </Pressable>
           <View style={{ position: 'absolute', backgroundColor: colors.background, opacity: 0.4, top: 0, left: 0, right: 0, bottom: 0 }} />

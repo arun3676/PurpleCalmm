@@ -35,10 +35,10 @@ export default function MigraineScreen({ navigation }: Props) {
     const current = sounds[name];
     if (current) {
       await stopAndUnload(current);
-      setSounds({ ...sounds, [name]: null });
+      setSounds(prev => ({ ...prev, [name]: null }));
     } else {
       const s = await playLoop(name, 0.25);
-      setSounds({ ...sounds, [name]: s });
+      setSounds(prev => ({ ...prev, [name]: s }));
     }
   }
 
@@ -65,6 +65,7 @@ export default function MigraineScreen({ navigation }: Props) {
 
       <View style={{ marginTop: 24 }}>
         <Text style={[textStyles.h2, { color: colors.text }]}>Sounds</Text>
+        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap a button to start/stop. On web, first tap unlocks audio.</Text>
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, flexWrap: 'wrap' as const }}>
           <PawButton label="Purr" onPress={() => toggle('purr')} />
           <PawButton label="Rain" onPress={() => toggle('rain')} />
