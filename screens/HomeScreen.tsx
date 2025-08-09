@@ -8,7 +8,8 @@ import CatAvatar from '../components/CatAvatar';
 import PawButton from '../components/PawButton';
 import { calcJournalStreak, loadEntries } from '../utils/storage';
 import { soft, selection } from '../utils/haptics';
-import { playLoop, stopAndUnload, resumeAll } from '../utils/audio';
+import { playLoop, stopAndUnload, resumeAll, playSong, stopAllSongs } from '../utils/audio';
+import { speakMochi } from '../utils/voice';
 import type { Sound } from 'expo-av';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -59,6 +60,16 @@ export default function HomeScreen({ navigation }: Props) {
           {cuddling ? 'Purring… 💜💜💜' : `Journal streak: ${streak} day${streak === 1 ? '' : 's'}`}
         </Text>
         {!cuddling && <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 2 }]}>Tap & hold the cat to cuddle</Text>}
+      </View>
+
+      {/* Playful Cat Actions */}
+      <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 12, marginBottom: 12 }}>
+        <Text style={[textStyles.h2, { color: colors.text }]}>Mochi’s Quick Actions</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' as const, gap: 12, marginTop: 8 }}>
+          <PawButton label="Purr" onPress={async () => { await resumeAll(); await stopAndUnload(purr); const s = await playLoop('softpurr', 0.3); setPurr(s); }} />
+          <PawButton label="Meow" onPress={async () => { await stopAllSongs(); await playSong('sadmeow', 0.7, false); }} />
+          <PawButton label="Ground me" onPress={async () => { await speakMochi('Let’s breathe together. Inhale four, hold four, exhale four. You are safe.'); }} />
+        </View>
       </View>
 
       <Card title="Cat Chat" subtitle="Talk to Mochi when anxious" onPress={() => navigation.navigate('CatChat')} />

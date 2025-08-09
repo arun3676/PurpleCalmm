@@ -1,12 +1,16 @@
 import { Platform } from 'react-native';
 import { playSong } from './audio';
 
-function pickWebVoice(lang?: string) {
+function pickWebVoice(lang?: string, preferNames: string[] = []) {
   const synth = (window as any).speechSynthesis as SpeechSynthesis | undefined;
   if (!synth) return null;
   const list = synth.getVoices?.() || [];
-  const m = list.find(v => (v as any).lang?.toLowerCase().startsWith((lang||'').toLowerCase()));
-  return m || list[0] || null;
+  const candidates = list.filter(v => (v as any).lang?.toLowerCase().startsWith((lang||'').toLowerCase()));
+  for (const tag of preferNames) {
+    const found = candidates.find(v => (v.name || '').includes(tag));
+    if (found) return found;
+  }
+  return candidates[0] || list[0] || null;
 }
 
 function bestKoVoice(): SpeechSynthesisVoice | null {
@@ -106,4 +110,32 @@ export async function goodnightKO() {
     ['잘 자요…', '좋은 꿈 꿔요…', '제가 옆에 있어요.'],
     { lang: 'ko-KR', rate: 0.9, pitch: 1.15, volume: 0.95, gapMs: 220 }
   );
+}
+
+export async function speakMochi(text: string, opts?: { lang?: 'en-US'|'ko-KR'; rate?: number; pitch?: number; volume?: number }) {
+  const lang = opts?.lang || 'en-US';
+  const rate = opts?.rate ?? 0.92;
+  const pitch = opts?.pitch ?? 1.05;
+  const volume = opts?.volume ?? 0.95;
+
+  if (Platform.OS === 'web') {
+    const synth = (window as any).speechSynthesis as SpeechSynthesis | undefined;
+    if (!synth) return;
+    const say = () => {
+      const u = new SpeechSynthesisUtterance(text);
+      const v = pickWebVoice(lang, ['Natural', 'Neural', 'WaveNet', 'Google 한국의', 'Microsoft']);
+      if (v) (u as any).voice = v;
+      u.rate = rate; u.pitch = pitch; u.volume = volume;
+      synth.cancel(); synth.speak(u);
+    };
+    const voices = synth.getVoices?.() || [];
+    if (voices.length === 0) synth.onvoiceschanged = () => { say(); synth.onvoiceschanged = null as any; };
+    else say();
+    return;
+  }
+  try {
+    const Speech = await import('expo-speech');
+    // @ts-ignore
+    Speech.speak(text, { language: lang, rate, pitch, volume });
+  } catch {}
 }

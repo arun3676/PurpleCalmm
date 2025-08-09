@@ -13,14 +13,14 @@ export type AppPalette = {
 };
 
 export const PurpleTheme: AppPalette = {
-  primary: '#A78BFA',
-  primaryDark: '#7C3AED',
-  primaryDarker: '#4C1D95',
-  accent: '#FDE68A',
+  primary: '#6A5ACD',        // Soft Indigo
+  primaryDark: '#5B3FD6',    // Deeper Indigo
+  primaryDarker: '#2E2A5A',  // Night Indigo
+  accent: '#F7B3D0',         // Pink Paws
   background: '#0B0B14',
   surface: '#151524',
-  text: '#F8F7FF',
-  mutedText: '#C9C6F0',
+  text: '#F6F3FF',
+  mutedText: '#BFB7E6',
   success: '#4ADE80',
   danger: '#F87171',
   sparkle: '#C4B5FD'
