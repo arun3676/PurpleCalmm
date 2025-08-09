@@ -5,7 +5,7 @@ import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { saveEntry } from '../utils/storage';
 import { CAT_SYSTEM_PROMPT } from '../utils/catPrompt';
-import { playLoop, stopAndUnload, playOneShot, playMochiLullaby, playSong } from '../utils/audio';
+import { stopAndUnload, playMochiLullaby, playSong } from '../utils/audio';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatChat'>;
 
@@ -43,9 +43,9 @@ export default function CatChatScreen({ navigation }: Props) {
       setMsgs(m => [
         ...m,
         { role: 'user', content: text },
-        { role: 'assistant', content: "Okay—singing Soft Kitty now. I’ll keep it soft. Tap the banner to stop. 💜" }
+        { role: 'assistant', content: "Okay—singing Soft Kitty now. I’ll keep it soft. Tap the button to pause. 💜" }
       ]);
-      const s = await playSong('softkitty', 0.65);
+      const s = await playSong('softkitty', 0.7, false);
       setSoftKitty(s);
       return; // don't hit the API for this one
     }
@@ -113,14 +113,17 @@ export default function CatChatScreen({ navigation }: Props) {
         {loading && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
       </ScrollView>
 
-      {softKitty && (
+      <View style={{ flexDirection:'row', justifyContent:'center', marginBottom:8 }}>
         <Pressable
-          onPress={async () => { await stopAndUnload(softKitty); setSoftKitty(null); }}
-          style={{ alignSelf: 'center', marginBottom: 8, backgroundColor: colors.surface, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 }}
+          onPress={async () => {
+            if (softKitty) { await stopAndUnload(softKitty); setSoftKitty(null); }
+            else { const s = await playSong('softkitty', 0.7, false); setSoftKitty(s); }
+          }}
+          style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 12 }}
         >
-          <Text style={[textStyles.body, { color: colors.mutedText }]}>🔈 Soft Kitty playing — tap to stop</Text>
+          <Text style={[textStyles.body, { color: colors.text }]}>{softKitty ? '⏸ Soft Kitty' : '▶︎ Soft Kitty'}</Text>
         </Pressable>
-      )}
+      </View>
 
       {lullaby && (
         <Pressable

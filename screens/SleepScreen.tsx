@@ -4,10 +4,9 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useKeepAwake } from 'expo-keep-awake';
-import { playLoop, stopAndUnload, playOneShot, goodNightTaeVibe } from '../utils/audio';
+import { playLoop, stopAndUnload, playSong } from '../utils/audio';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
-import { goodnightKO } from '../utils/voice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Sleep'>;
 
@@ -15,14 +14,12 @@ export default function SleepScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
   const [bedside, setBedside] = useState(false);
   const [purr, setPurr] = useState<Sound | any | null>(null);
-  const [anchor, setAnchor] = useState<Sound | any | null>(null);
+  const [anchor, setAnchor] = useState<any | null>(null);
   const [holding, setHolding] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
     async function run() {
       await soft();
-      // tiny wind-down cue
       await new Promise(res => setTimeout(res, 3000));
       await success();
     }
@@ -36,7 +33,7 @@ export default function SleepScreen({ navigation }: Props) {
     (async () => {
       stopAndUnload(purr);
       if (bedside) {
-        const s = await playLoop('purr', 0.15);
+        const s = await playLoop('softpurr', 0.15);
         setPurr(s);
       }
     })();
@@ -44,16 +41,14 @@ export default function SleepScreen({ navigation }: Props) {
 
   async function onPressIn() {
     setHolding(true);
-    // start a slightly louder purr as an "anchor tone" while held
-    const a = await playLoop('purr', 0.35);
+    const a = await playLoop('softpurr', 0.35);
     setAnchor(a);
   }
 
   async function onPressOut() {
     setHolding(false);
     await stopAndUnload(anchor);
-    await playOneShot('chime', 0.35);
-    await goodnightKO();
+    await playSong('goodnightko', 0.85, false);
   }
 
   return (

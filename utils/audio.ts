@@ -302,7 +302,11 @@ export async function setVolume(sound: any, v: number) {
   } catch {}
 }
 
-export async function playSong(name: 'sadmeow'|'goodnightko'|'softkitty', volume = 0.6) {
+export async function playSong(
+  name: 'goodnightko'|'sadmeow'|'softkitty',
+  volume = 0.7,
+  loop = false
+) {
   try {
     // Ensure web audio/native mode if available
     // @ts-ignore
@@ -313,7 +317,7 @@ export async function playSong(name: 'sadmeow'|'goodnightko'|'softkitty', volume
     const src = sources[name];
     if (!src) return null;
     // @ts-ignore
-    const { sound } = await Audio.Sound.createAsync(src, { isLooping: name==='sadmeow', volume });
+    const { sound } = await Audio.Sound.createAsync(src, { isLooping: loop, volume });
     await sound.playAsync();
     return sound;
   } catch { return null; }
