@@ -32,6 +32,7 @@ export default function MigraineScreen({ navigation }: Props) {
   }, [vol]);
 
   async function toggle(name: 'ocean' | 'softpurr' | 'drizzle' | 'windchimes' | 'brown' | 'meow' | 'llama') {
+    await resumeAll(); // important on web
     const current = loops[name];
     if (current) {
       await stopAndUnload(current);

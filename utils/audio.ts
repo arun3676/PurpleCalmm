@@ -27,10 +27,13 @@ function ctx() {
   webCtx = C ? new C() : null;
   return webCtx!;
 }
-async function webResume() { const c = ctx(); if (!c) return null; if (c.state !== 'running') await c.resume(); return c; }
-
-export async function pauseAll() { if (Platform.OS === 'web') { const c = ctx(); if (c && c.state === 'running') await c.suspend(); } }
-export async function resumeAll() { if (Platform.OS === 'web') { const c = ctx(); if (c && c.state === 'suspended') await c.resume(); } }
+export async function webResume() {
+  const c = ctx(); if (!c) return null;
+  if (c.state !== 'running') await c.resume();
+  return c;
+}
+export async function pauseAll() { const c = ctx(); if (c && c.state === 'running') await c.suspend(); }
+export async function resumeAll() { const c = ctx(); if (c && c.state === 'suspended') await c.resume(); }
 
 function makeGain(v: number) {
   const c = ctx(); if (!c) return null;
@@ -171,39 +174,48 @@ function webChime(vol: number): WebNode | null {
   return { stopAsync: async () => {}, unloadAsync: async () => {}, setVolume: ()=>{} };
 }
 
-function webMochiMeow(volume: number): WebNode | null {
+function webMochiMeow(volume: number) {
   const c = ctx(); if (!c) return null;
-  const master = c.createGain(); master.gain.value = volume; master.connect(c.destination);
-  // soft ambient bed to keep the context alive at low level
+  const master = makeGain(volume)!;
+
+  // very soft air bed so total silence isn't jarring (very low level)
   const bed = c.createBufferSource();
-  const size = 2 * c.sampleRate, buf = c.createBuffer(1, size, c.sampleRate), data = buf.getChannelData(0);
-  for (let i=0;i<size;i++) data[i] = (Math.random()*2-1)*0.03;
+  const size = 2 * c.sampleRate; const buf = c.createBuffer(1, size, c.sampleRate);
+  const data = buf.getChannelData(0); for (let i=0;i<size;i++) data[i] = (Math.random()*2-1)*0.02;
   bed.buffer = buf; bed.loop = true; bed.connect(master); bed.start();
 
   function meowOnce() {
-    const osc = c.createOscillator(), g = c.createGain();
+    // two-part little "mew" with vibrato
+    const g = c.createGain(); g.gain.value = 0.0001; g.connect(master);
+    const osc = c.createOscillator(); const lfo = c.createOscillator(); const lfoGain = c.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(680, c.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(420, c.currentTime + 0.35);
-    g.gain.setValueAtTime(0.0001, c.currentTime);
-    g.gain.linearRampToValueAtTime(volume*0.5, c.currentTime + 0.06);
-    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.6);
-    osc.connect(g).connect(master);
-    osc.start(); osc.stop(c.currentTime + 0.6);
+    osc.frequency.setValueAtTime(600, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(420, c.currentTime + 0.28);
+    lfo.type = 'sine'; lfo.frequency.value = 6; lfoGain.gain.value = 8;
+    lfo.connect(lfoGain).connect(osc.frequency);
+
+    g.gain.linearRampToValueAtTime(volume*0.55, c.currentTime + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.65);
+
+    osc.connect(g); osc.start(); lfo.start();
+    osc.stop(c.currentTime + 0.65); lfo.stop(c.currentTime + 0.65);
   }
 
-  const id = setInterval(() => meowOnce(), 12000 + Math.random()*8000);
+  const id = setInterval(() => meowOnce(), 7000 + Math.random()*5000);
+  // start with one
   meowOnce();
 
   return { stopAsync: async () => { try { clearInterval(id); bed.stop(); } catch {} }, unloadAsync: async () => {} };
 }
 
-function webLlamaHum(volume: number): WebNode | null {
+function webLlamaHum(volume: number) {
   const c = ctx(); if (!c) return null;
-  const g = c.createGain(); g.gain.value = volume; g.connect(c.destination);
-  const a = c.createOscillator(), b = c.createOscillator(), lfo = c.createOscillator(), lfoGain = c.createGain();
-  a.type='sine'; b.type='sine'; a.frequency.value=110; b.frequency.value=112;
-  lfo.type='sine'; lfo.frequency.value=0.45; lfoGain.gain.value=volume*0.25;
+  const g = makeGain(volume)!;
+  const a = c.createOscillator(), b = c.createOscillator();
+  const lfo = c.createOscillator(), lfoGain = c.createGain();
+  a.type='sine'; b.type='sine';
+  a.frequency.value=110; b.frequency.value=111.6; // gentle beating
+  lfo.type='sine'; lfo.frequency.value=0.4; lfoGain.gain.value=volume*0.28;
   lfo.connect(lfoGain).connect(g.gain);
   a.connect(g); b.connect(g);
   a.start(); b.start(); lfo.start();

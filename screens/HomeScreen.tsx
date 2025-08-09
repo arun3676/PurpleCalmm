@@ -30,7 +30,7 @@ export default function HomeScreen({ navigation }: Props) {
   async function onCatPressIn() {
     setCuddling(true);
     selection();
-    const s = await playLoop('purr', 0.28);
+    const s = await playLoop('softpurr', 0.28);
     setPurr(s);
   }
   async function onCatPressOut() {
@@ -52,7 +52,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       <View style={{ alignItems: 'center', marginBottom: 16 }}>
         <Pressable onPressIn={onCatPressIn} onPressOut={onCatPressOut} hitSlop={20}>
-          <CatAvatar moodLevel={Math.min(1, streak / 7)} />
+          <CatAvatar moodLevel={Math.min(1, streak / 7)} size={140} />
         </Pressable>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>
           {cuddling ? 'Purring… 💜💜💜' : `Journal streak: ${streak} day${streak === 1 ? '' : 's'}`}
