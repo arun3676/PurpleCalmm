@@ -7,7 +7,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { playLoop, stopAndUnload, playOneShot, goodNightTaeVibe } from '../utils/audio';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
-import { speak, speakSequence } from '../utils/voice';
+import { speakGoodnightKoCute } from '../utils/voice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Sleep'>;
 
@@ -53,10 +53,7 @@ export default function SleepScreen({ navigation }: Props) {
     setHolding(false);
     await stopAndUnload(anchor);
     await playOneShot('chime', 0.4);
-    await speakSequence(
-      ['잘 자요…', '좋은 꿈 꿔요…', '제가 옆에 있어요.'],
-      { lang: 'ko-KR', rate: 0.9, pitch: 1.15, volume: 0.95, gapMs: 220 }
-    );
+    await speakGoodnightKoCute();
   }
 
   return (

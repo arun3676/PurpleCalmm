@@ -11,6 +11,7 @@ const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   // brown: require('../assets/brown.mp3'),
   // chime: require('../assets/ting.mp3'),
   softkitty: require('../assets/soft_kitty.mp3'),
+  // meow: require('../assets/meow_soft.mp3'), // Uncomment only if the file exists in assets
 };
 
 type WebNode = {
@@ -174,52 +175,69 @@ function webChime(vol: number): WebNode | null {
   return { stopAsync: async () => {}, unloadAsync: async () => {}, setVolume: ()=>{} };
 }
 
-function webMochiMeow(volume: number) {
+// 2) Fallback meow synth (only used if mp3 missing)
+function webMeowSynth(volume: number) {
   const c = ctx(); if (!c) return null;
-  const master = makeGain(volume)!;
+  const master = c.createGain(); master.gain.value = volume; master.connect(c.destination);
 
-  // very soft air bed so total silence isn't jarring (very low level)
+  function meowOnce() {
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    const vib = c.createOscillator(), vibGain = c.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(620, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(420, c.currentTime + 0.28);
+
+    vib.type = 'sine'; vib.frequency.value = 5.5; vibGain.gain.value = 7;
+    vib.connect(vibGain).connect(osc.frequency);
+
+    g.gain.setValueAtTime(0.0001, c.currentTime);
+    g.gain.linearRampToValueAtTime(volume * 0.55, c.currentTime + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.6);
+
+    osc.connect(g).connect(master);
+    osc.start(); vib.start();
+    osc.stop(c.currentTime + 0.6); vib.stop(c.currentTime + 0.6);
+  }
+
+  // soft air so silence isn’t abrupt
   const bed = c.createBufferSource();
   const size = 2 * c.sampleRate; const buf = c.createBuffer(1, size, c.sampleRate);
   const data = buf.getChannelData(0); for (let i=0;i<size;i++) data[i] = (Math.random()*2-1)*0.02;
   bed.buffer = buf; bed.loop = true; bed.connect(master); bed.start();
 
-  function meowOnce() {
-    // two-part little "mew" with vibrato
-    const g = c.createGain(); g.gain.value = 0.0001; g.connect(master);
-    const osc = c.createOscillator(); const lfo = c.createOscillator(); const lfoGain = c.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(600, c.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(420, c.currentTime + 0.28);
-    lfo.type = 'sine'; lfo.frequency.value = 6; lfoGain.gain.value = 8;
-    lfo.connect(lfoGain).connect(osc.frequency);
-
-    g.gain.linearRampToValueAtTime(volume*0.55, c.currentTime + 0.08);
-    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.65);
-
-    osc.connect(g); osc.start(); lfo.start();
-    osc.stop(c.currentTime + 0.65); lfo.stop(c.currentTime + 0.65);
-  }
-
-  const id = setInterval(() => meowOnce(), 7000 + Math.random()*5000);
-  // start with one
+  const id = setInterval(meowOnce, 8000 + Math.random()*6000);
   meowOnce();
 
   return { stopAsync: async () => { try { clearInterval(id); bed.stop(); } catch {} }, unloadAsync: async () => {} };
 }
 
+// 3) Llama hum synth (low, smooth, not windy)
 function webLlamaHum(volume: number) {
   const c = ctx(); if (!c) return null;
-  const g = makeGain(volume)!;
-  const a = c.createOscillator(), b = c.createOscillator();
-  const lfo = c.createOscillator(), lfoGain = c.createGain();
-  a.type='sine'; b.type='sine';
-  a.frequency.value=110; b.frequency.value=111.6; // gentle beating
-  lfo.type='sine'; lfo.frequency.value=0.4; lfoGain.gain.value=volume*0.28;
-  lfo.connect(lfoGain).connect(g.gain);
-  a.connect(g); b.connect(g);
-  a.start(); b.start(); lfo.start();
-  return { stopAsync: async () => { try { a.stop(); b.stop(); lfo.stop(); } catch {} }, unloadAsync: async () => {} };
+  const g = c.createGain(); g.gain.value = volume; g.connect(c.destination);
+
+  // fundamental + 2nd harmonic for “hum”
+  const a = c.createOscillator(); a.type='sine'; a.frequency.value = 110; // A2
+  const b = c.createOscillator(); b.type='sine'; b.frequency.value = 220;
+
+  // gentle vibrato + slow tremolo
+  const vib = c.createOscillator(), vibGain = c.createGain();
+  vib.type='sine'; vib.frequency.value = 0.45; vibGain.gain.value = 3;
+  vib.connect(vibGain).connect(a.frequency);
+
+  const trem = c.createOscillator(), tremGain = c.createGain();
+  trem.type='sine'; trem.frequency.value = 0.35; tremGain.gain.value = volume*0.25;
+  trem.connect(tremGain).connect(g.gain);
+
+  // mild lowpass for warmth
+  const lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 600; lp.Q.value = 0.7;
+  a.connect(lp); b.connect(lp); lp.connect(g);
+
+  a.start(); b.start(); vib.start(); trem.start();
+
+  return { stopAsync: async () => { try { a.stop(); b.stop(); vib.stop(); trem.stop(); } catch {} }, unloadAsync: async () => {} };
 }
 
 // --- Public API ---
@@ -236,7 +254,7 @@ export async function playLoop(name: NamedSound, volume = 0.4): Promise<SoundLik
     if (name === 'drizzle') return webDrizzle(volume);
     if (name === 'windchimes') return webWindChimes(volume);
     if (name === 'brown') return webBrown(volume);
-    if (name === 'meow') return webMochiMeow(volume);
+    if (name === 'meow') return webMeowSynth(volume);
     if (name === 'llama') return webLlamaHum(volume);
     return null;
   }

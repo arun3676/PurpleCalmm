@@ -8,6 +8,19 @@ function pickWebVoice(lang?: string) {
   return m || list[0] || null;
 }
 
+function bestKoVoice(): SpeechSynthesisVoice | null {
+  const synth = (window as any).speechSynthesis as SpeechSynthesis | undefined;
+  if (!synth) return null;
+  const voices = synth.getVoices?.() || [];
+  const prefer = ['Natural', 'Neural', 'WaveNet', 'Google 한국의', 'Microsoft'];
+  const ko = voices.filter(v => (v as any).lang?.toLowerCase().startsWith('ko'));
+  for (const tag of prefer) {
+    const pick = ko.find(v => (v.name || '').includes(tag));
+    if (pick) return pick as any;
+  }
+  return (ko[0] as any) || null;
+}
+
 export async function speak(text: string, opts?: { rate?: number; pitch?: number; volume?: number; lang?: string }) {
   const { rate = 0.92, pitch = 1.1, volume = 0.9, lang } = opts || {};
   if (Platform.OS === 'web') {
@@ -56,4 +69,31 @@ export async function speakSequence(lines: string[], opts?: { rate?: number; pit
       }
     });
   }
+}
+
+export async function speakGoodnightKoCute() {
+  const lines = ['잘 자요…', '좋은 꿈 꿔요…', '제가 옆에 있어요.'];
+  if (Platform.OS === 'web') {
+    const synth = (window as any).speechSynthesis as SpeechSynthesis | undefined;
+    if (!synth) return;
+
+    const say = (text: string) => {
+      const u = new SpeechSynthesisUtterance(text);
+      const v = bestKoVoice(); if (v) (u as any).voice = v;
+      u.rate = 0.85; u.pitch = 1.03; u.volume = 0.92;
+      synth.speak(u);
+      return new Promise<void>(res => { u.onend = () => setTimeout(res, 280); u.onerror = () => setTimeout(res, 280); });
+    };
+
+    if (!synth.getVoices || synth.getVoices().length === 0) {
+      await new Promise<void>(res => { synth.onvoiceschanged = () => { synth.onvoiceschanged = null as any; res(); }; });
+    }
+    for (const l of lines) await say(l);
+    return;
+  }
+  try {
+    const Speech = await import('expo-speech');
+    // @ts-ignore
+    for (const l of lines) { await new Promise<void>(res => { Speech.speak(l, { language: 'ko-KR', rate: 0.85, pitch: 1.03, onDone: () => setTimeout(res, 280), onError: () => setTimeout(res, 280) }); }); }
+  } catch {}
 }
