@@ -4,7 +4,7 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import * as Brightness from 'expo-brightness';
-import { playLoop, stopAndUnload, setVolume, playOneShot } from '../utils/audio';
+import { playLoop, stopAndUnload, setVolume, playOneShot, pauseAll, resumeAll } from '../utils/audio';
 import { scheduleIn } from '../utils/notifications';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
@@ -19,6 +19,7 @@ export default function MigraineScreen({ navigation }: Props) {
   const [hydration, setHydration] = useState(false);
   const [resetRunning, setResetRunning] = useState(false);
   const [resetStep, setResetStep] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     (async () => { try { if (Platform.OS !== 'web') await Brightness.setSystemBrightnessAsync(0.02); } catch {} })();
@@ -30,7 +31,7 @@ export default function MigraineScreen({ navigation }: Props) {
     Object.values(loops).forEach(l => setVolume(l, vol));
   }, [vol]);
 
-  async function toggle(name: 'ocean' | 'softpurr' | 'drizzle' | 'windchimes' | 'brown') {
+  async function toggle(name: 'ocean' | 'softpurr' | 'drizzle' | 'windchimes' | 'brown' | 'meow' | 'llama') {
     const current = loops[name];
     if (current) {
       await stopAndUnload(current);
@@ -87,9 +88,10 @@ export default function MigraineScreen({ navigation }: Props) {
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, flexWrap: 'wrap' as const }}>
           <PawButton label="Ocean" onPress={() => toggle('ocean')} />
           <PawButton label="Soft Purr" onPress={() => toggle('softpurr')} />
-          <PawButton label="Wind Chimes" onPress={() => toggle('windchimes')} />
           <PawButton label="Drizzle" onPress={() => toggle('drizzle')} />
           <PawButton label="Brown Noise" onPress={() => toggle('brown')} />
+          <PawButton label="Mochi Meow" onPress={() => toggle('meow')} />
+          <PawButton label="Llama Hum" onPress={() => toggle('llama')} />
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
@@ -99,6 +101,15 @@ export default function MigraineScreen({ navigation }: Props) {
               <Text style={[textStyles.body, { color: v === vol ? colors.accent : colors.mutedText }]}>{v === 0.2 ? 'Low' : v === 0.4 ? 'Med' : 'High'}</Text>
             </Pressable>
           ))}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+          <PawButton
+            label={paused ? 'Resume Sounds' : 'Pause Sounds'}
+            onPress={async () => {
+              if (paused) { await resumeAll(); setPaused(false); }
+              else { await pauseAll(); setPaused(true); }
+            }}
+          />
         </View>
       </View>
 

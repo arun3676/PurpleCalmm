@@ -1,7 +1,7 @@
 import { Audio, AVPlaybackSource } from 'expo-av';
 import { Platform } from 'react-native';
 
-type NamedSound = 'softpurr' | 'ocean' | 'drizzle' | 'windchimes' | 'brown' | 'chime' | 'softkitty';
+type NamedSound = 'softpurr' | 'ocean' | 'drizzle' | 'windchimes' | 'brown' | 'chime' | 'softkitty' | 'meow' | 'llama';
 const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   // Optional real files later:
   // ocean: require('../assets/ocean.mp3'),
@@ -28,6 +28,9 @@ function ctx() {
   return webCtx!;
 }
 async function webResume() { const c = ctx(); if (!c) return null; if (c.state !== 'running') await c.resume(); return c; }
+
+export async function pauseAll() { if (Platform.OS === 'web') { const c = ctx(); if (c && c.state === 'running') await c.suspend(); } }
+export async function resumeAll() { if (Platform.OS === 'web') { const c = ctx(); if (c && c.state === 'suspended') await c.resume(); } }
 
 function makeGain(v: number) {
   const c = ctx(); if (!c) return null;
@@ -168,6 +171,45 @@ function webChime(vol: number): WebNode | null {
   return { stopAsync: async () => {}, unloadAsync: async () => {}, setVolume: ()=>{} };
 }
 
+function webMochiMeow(volume: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const master = c.createGain(); master.gain.value = volume; master.connect(c.destination);
+  // soft ambient bed to keep the context alive at low level
+  const bed = c.createBufferSource();
+  const size = 2 * c.sampleRate, buf = c.createBuffer(1, size, c.sampleRate), data = buf.getChannelData(0);
+  for (let i=0;i<size;i++) data[i] = (Math.random()*2-1)*0.03;
+  bed.buffer = buf; bed.loop = true; bed.connect(master); bed.start();
+
+  function meowOnce() {
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(680, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(420, c.currentTime + 0.35);
+    g.gain.setValueAtTime(0.0001, c.currentTime);
+    g.gain.linearRampToValueAtTime(volume*0.5, c.currentTime + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.6);
+    osc.connect(g).connect(master);
+    osc.start(); osc.stop(c.currentTime + 0.6);
+  }
+
+  const id = setInterval(() => meowOnce(), 12000 + Math.random()*8000);
+  meowOnce();
+
+  return { stopAsync: async () => { try { clearInterval(id); bed.stop(); } catch {} }, unloadAsync: async () => {} };
+}
+
+function webLlamaHum(volume: number): WebNode | null {
+  const c = ctx(); if (!c) return null;
+  const g = c.createGain(); g.gain.value = volume; g.connect(c.destination);
+  const a = c.createOscillator(), b = c.createOscillator(), lfo = c.createOscillator(), lfoGain = c.createGain();
+  a.type='sine'; b.type='sine'; a.frequency.value=110; b.frequency.value=112;
+  lfo.type='sine'; lfo.frequency.value=0.45; lfoGain.gain.value=volume*0.25;
+  lfo.connect(lfoGain).connect(g.gain);
+  a.connect(g); b.connect(g);
+  a.start(); b.start(); lfo.start();
+  return { stopAsync: async () => { try { a.stop(); b.stop(); lfo.stop(); } catch {} }, unloadAsync: async () => {} };
+}
+
 // --- Public API ---
 export async function playLoop(name: NamedSound, volume = 0.4): Promise<SoundLike | null> {
   if (Platform.OS === 'web') {
@@ -182,6 +224,8 @@ export async function playLoop(name: NamedSound, volume = 0.4): Promise<SoundLik
     if (name === 'drizzle') return webDrizzle(volume);
     if (name === 'windchimes') return webWindChimes(volume);
     if (name === 'brown') return webBrown(volume);
+    if (name === 'meow') return webMochiMeow(volume);
+    if (name === 'llama') return webLlamaHum(volume);
     return null;
   }
   // Native: requires real files to sound great; will try if provided
