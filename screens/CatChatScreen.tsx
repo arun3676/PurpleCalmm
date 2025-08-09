@@ -5,7 +5,7 @@ import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { saveEntry } from '../utils/storage';
 import { CAT_SYSTEM_PROMPT } from '../utils/catPrompt';
-import { stopAndUnload, playMochiLullaby, playSong } from '../utils/audio';
+import { stopAndUnload, playMochiLullaby, playSong, stopAllSongs } from '../utils/audio';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatChat'>;
 

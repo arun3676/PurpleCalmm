@@ -4,7 +4,7 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import * as Brightness from 'expo-brightness';
-import { playSong, stopAndUnload, playLoop, resumeAll } from '../utils/audio';
+import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
 import { scheduleIn } from '../utils/notifications';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
@@ -14,8 +14,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
 export default function MigraineScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
   const [meow, setMeow] = useState<any | null>(null);
-  const [ocean, setOcean] = useState<any | null>(null);
-  const [brown, setBrown] = useState<any | null>(null);
   const [timer, setTimer] = useState<15 | 30 | 45>(15);
   const [hydration, setHydration] = useState(false);
   const [resetRunning, setResetRunning] = useState(false);
@@ -23,8 +21,8 @@ export default function MigraineScreen({ navigation }: Props) {
 
   useEffect(() => {
     (async () => { try { if (Platform.OS !== 'web') await Brightness.setSystemBrightnessAsync(0.02); } catch {} })();
-    return () => { stopAndUnload(meow); stopAndUnload(ocean); stopAndUnload(brown); };
-  }, [meow, ocean, brown]);
+    return () => { stopAndUnload(meow); };
+  }, [meow]);
 
   async function startTimer() {
     if (hydration) await scheduleIn(timer, 'Hydration reminder', 'Sip water to support recovery');
@@ -34,7 +32,6 @@ export default function MigraineScreen({ navigation }: Props) {
     await saveEntry({ id: `${Date.now()}`, type: 'migraineNote', note: 'Quick note during migraine', ts: Date.now() });
   }
 
-  // 60-second reset routine (cycles through 4 steps)
   function beginReset() {
     if (resetRunning) return;
     setResetRunning(true); setResetStep(0);
@@ -67,23 +64,22 @@ export default function MigraineScreen({ navigation }: Props) {
 
       <View style={{ marginTop: 24 }}>
         <Text style={[textStyles.h2, { color: colors.text }]}>Sound</Text>
-        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to start/stop. Choose 1–2 layers.</Text>
-        <View style={{ flexDirection:'row', flexWrap:'wrap', gap:12, marginTop:8 }}>
-          <PawButton label={meow ? '⏸ Mochi Meow' : '▶︎ Mochi Meow'} onPress={async () => {
-            await resumeAll();
-            if (meow) { await stopAndUnload(meow); setMeow(null); }
-            else { const s = await playSong('sadmeow', 0.6, true); setMeow(s); }
-          }} />
-          <PawButton label={ocean ? '⏸ Ocean' : '▶︎ Ocean'} onPress={async () => {
-            await resumeAll();
-            if (ocean) { await stopAndUnload(ocean); setOcean(null); }
-            else { const s = await playLoop('ocean', 0.4); setOcean(s); }
-          }} />
-          <PawButton label={brown ? '⏸ Brown Noise' : '▶︎ Brown Noise'} onPress={async () => {
-            await resumeAll();
-            if (brown) { await stopAndUnload(brown); setBrown(null); }
-            else { const s = await playLoop('brown', 0.35); setBrown(s); }
-          }} />
+        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to start/stop.</Text>
+        <View style={{ flexDirection:'row', gap:12, marginTop:8 }}>
+          <PawButton
+            label={meow ? '⏸ Mochi Meow' : '▶︎ Mochi Meow'}
+            onPress={async () => {
+              await resumeAll();
+              if (meow) {
+                await stopAndUnload(meow);
+                setMeow(null);
+              } else {
+                await stopAllSongs();
+                const s = await playSong('sadmeow', 0.7, true);
+                setMeow(s);
+              }
+            }}
+          />
         </View>
       </View>
 
