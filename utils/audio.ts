@@ -72,38 +72,25 @@ export async function playSong(name: SongName, volume = 0.8, loop = false) {
   } catch { return null; }
 }
 
-// --- Web meow synth loop for distinct sound (used when assets are placeholders) ---
-function webMeowLoop(volume = 0.6) {
+// --- Minimal web soft purr generator for press-and-hold anchor ---
+function webSoftPurr(volume = 0.35) {
   const c = ctx(); if (!c) return null;
   const master = c.createGain(); master.gain.value = volume; master.connect(c.destination);
-
-  function meowOnce() {
-    const osc = c.createOscillator();
-    const g = c.createGain();
-    const vib = c.createOscillator(); const vibGain = c.createGain();
-    osc.type = 'triangle'; osc.frequency.setValueAtTime(620, c.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(420, c.currentTime + 0.28);
-    vib.type = 'sine'; vib.frequency.value = 5.5; vibGain.gain.value = 7;
-    vib.connect(vibGain).connect(osc.frequency);
-    g.gain.setValueAtTime(0.0001, c.currentTime);
-    g.gain.linearRampToValueAtTime(volume * 0.55, c.currentTime + 0.08);
-    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.6);
-    osc.connect(g).connect(master);
-    osc.start(); vib.start();
-    osc.stop(c.currentTime + 0.6); vib.stop(c.currentTime + 0.6);
-  }
-  // soft air bed
-  const bed = c.createBufferSource();
-  const size = 2 * c.sampleRate; const buf = c.createBuffer(1, size, c.sampleRate);
-  const data = buf.getChannelData(0); for (let i=0;i<size;i++) data[i] = (Math.random()*2-1)*0.02;
-  bed.buffer = buf; bed.loop = true; bed.connect(master); bed.start();
-  const id = setInterval(meowOnce, 8000 + Math.random()*6000);
-  meowOnce();
-  return { stopAsync: async () => { try { clearInterval(id); bed.stop(); } catch {} }, unloadAsync: async () => {} };
+  const a = c.createOscillator(); const b = c.createOscillator();
+  const trem = c.createOscillator(); const tremG = c.createGain();
+  a.type = 'sine'; b.type = 'sine'; a.frequency.value = 50; b.frequency.value = 52.1;
+  trem.type = 'sine'; trem.frequency.value = 1.8; tremG.gain.value = volume * 0.35;
+  trem.connect(tremG).connect(master.gain);
+  a.connect(master); b.connect(master);
+  a.start(); b.start(); trem.start();
+  return {
+    stopAsync: async () => { try { a.stop(); b.stop(); trem.stop(); } catch {} },
+    unloadAsync: async () => {}
+  } as any;
 }
-export async function playMeowLoop(volume = 0.6) {
-  if (Platform.OS === 'web') return webMeowLoop(volume);
-  return playSong('sadmeow', volume, true);
+export async function playLoop(name: 'softpurr', volume = 0.35) {
+  if (Platform.OS === 'web') { await resumeAll(); if (name === 'softpurr') return webSoftPurr(volume); }
+  return null;
 }
 
 // Optional stub so optional chaining calls like playLoop?.() elsewhere don't crash imports
