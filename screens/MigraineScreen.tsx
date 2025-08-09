@@ -31,14 +31,14 @@ export default function MigraineScreen({ navigation }: Props) {
     Object.values(loops).forEach(l => setVolume(l, vol));
   }, [vol]);
 
-  async function toggle(name: 'ocean' | 'softpurr' | 'drizzle' | 'windchimes' | 'brown' | 'meow' | 'llama') {
+  async function toggle(name: 'ocean' | 'softpurr' | 'drizzle' | 'windchimes' | 'brown' | 'meow' | 'llama' | 'sadmeow') {
     await resumeAll(); // important on web
     const current = loops[name];
     if (current) {
       await stopAndUnload(current);
       const next = { ...loops }; delete next[name]; setLoops(next);
     } else {
-      const s = await playLoop(name, vol);
+      const s = await playLoop(name as any, vol);
       setLoops({ ...loops, [name]: s });
     }
   }
@@ -93,6 +93,7 @@ export default function MigraineScreen({ navigation }: Props) {
           <PawButton label="Brown Noise" onPress={() => toggle('brown')} />
           <PawButton label="Mochi Meow" onPress={() => toggle('meow')} />
           <PawButton label="Llama Hum" onPress={() => toggle('llama')} />
+          <PawButton label="Sad Meow" onPress={() => toggle('sadmeow')} />
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>

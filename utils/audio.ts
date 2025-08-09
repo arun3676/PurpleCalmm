@@ -1,7 +1,7 @@
 import { Audio, AVPlaybackSource } from 'expo-av';
 import { Platform } from 'react-native';
 
-type NamedSound = 'softpurr' | 'ocean' | 'drizzle' | 'windchimes' | 'brown' | 'chime' | 'softkitty' | 'meow' | 'llama';
+type NamedSound = 'softpurr' | 'ocean' | 'drizzle' | 'windchimes' | 'brown' | 'chime' | 'softkitty' | 'meow' | 'llama' | 'sadmeow' | 'goodnightko';
 const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   // Optional real files later:
   // ocean: require('../assets/ocean.mp3'),
@@ -11,7 +11,9 @@ const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   // brown: require('../assets/brown.mp3'),
   // chime: require('../assets/ting.mp3'),
   softkitty: require('../assets/soft_kitty.mp3'),
-  // meow: require('../assets/meow_soft.mp3'), // Uncomment only if the file exists in assets
+  sadmeow: require('../assets/sad_meow.mp3'),
+  goodnightko: require('../assets/goodnight_ko.mp3'),
+  // meow: require('../assets/meow_soft.mp3'), // optional alternate naming
 };
 
 type WebNode = {
@@ -300,23 +302,21 @@ export async function setVolume(sound: any, v: number) {
   } catch {}
 }
 
-export async function playSong(name: 'softkitty', volume = 0.65) {
+export async function playSong(name: 'sadmeow'|'goodnightko'|'softkitty', volume = 0.6) {
   try {
-    // Ensure web audio is unlocked (no-op if not applicable)
+    // Ensure web audio/native mode if available
     // @ts-ignore
     if (typeof Audio?.setAudioModeAsync === 'function') {
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     }
     // @ts-ignore
-    const { sound } = await Audio.Sound.createAsync(sources[name]!, {
-      isLooping: false,
-      volume,
-    });
+    const src = sources[name];
+    if (!src) return null;
+    // @ts-ignore
+    const { sound } = await Audio.Sound.createAsync(src, { isLooping: name==='sadmeow', volume });
     await sound.playAsync();
     return sound;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 // --- Mochi's Cozy Lullaby (web synth) ---

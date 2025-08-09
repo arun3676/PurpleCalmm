@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { playSong } from './audio';
 
 function pickWebVoice(lang?: string) {
   const synth = (window as any).speechSynthesis as SpeechSynthesis | undefined;
@@ -96,4 +97,13 @@ export async function speakGoodnightKoCute() {
     // @ts-ignore
     for (const l of lines) { await new Promise<void>(res => { Speech.speak(l, { language: 'ko-KR', rate: 0.85, pitch: 1.03, onDone: () => setTimeout(res, 280), onError: () => setTimeout(res, 280) }); }); }
   } catch {}
+}
+
+export async function goodnightKO() {
+  const s = await playSong('goodnightko', 0.75);
+  if (s) return;
+  await speakSequence(
+    ['잘 자요…', '좋은 꿈 꿔요…', '제가 옆에 있어요.'],
+    { lang: 'ko-KR', rate: 0.9, pitch: 1.15, volume: 0.95, gapMs: 220 }
+  );
 }
