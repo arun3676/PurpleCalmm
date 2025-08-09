@@ -1,7 +1,7 @@
 import { Audio, AVPlaybackSource } from 'expo-av';
 import { Platform } from 'react-native';
 
-type NamedSound = 'softpurr' | 'ocean' | 'drizzle' | 'windchimes' | 'brown' | 'chime';
+type NamedSound = 'softpurr' | 'ocean' | 'drizzle' | 'windchimes' | 'brown' | 'chime' | 'softkitty';
 const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   // Optional real files later:
   // ocean: require('../assets/ocean.mp3'),
@@ -10,6 +10,7 @@ const sources: Partial<Record<NamedSound, AVPlaybackSource>> = {
   // windchimes: require('../assets/chime.mp3'),
   // brown: require('../assets/brown.mp3'),
   // chime: require('../assets/ting.mp3'),
+  softkitty: require('../assets/soft_kitty.mp3'),
 };
 
 type WebNode = {
@@ -223,6 +224,25 @@ export async function setVolume(sound: any, v: number) {
     if (typeof sound.setVolumeAsync === 'function') await sound.setVolumeAsync(v);
     if (typeof sound.setVolume === 'function') sound.setVolume(v);
   } catch {}
+}
+
+export async function playSong(name: 'softkitty', volume = 0.6) {
+  try {
+    // Ensure web audio is unlocked (no-op if not applicable)
+    // @ts-ignore
+    if (typeof Audio?.setAudioModeAsync === 'function') {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+    }
+    // @ts-ignore
+    const { sound } = await Audio.Sound.createAsync(sources[name]!, {
+      isLooping: false,
+      volume,
+    });
+    await sound.playAsync();
+    return sound;
+  } catch {
+    return null;
+  }
 }
 
 // --- Mochi's Cozy Lullaby (web synth) ---

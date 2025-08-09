@@ -5,7 +5,7 @@ import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { saveEntry } from '../utils/storage';
 import { CAT_SYSTEM_PROMPT } from '../utils/catPrompt';
-import { playLoop, stopAndUnload, playOneShot, playMochiLullaby } from '../utils/audio';
+import { playLoop, stopAndUnload, playOneShot, playMochiLullaby, playSong } from '../utils/audio';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatChat'>;
 
@@ -21,6 +21,7 @@ export default function CatChatScreen({ navigation }: Props) {
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [lullaby, setLullaby] = useState<any | null>(null);
+  const [softKitty, setSoftKitty] = useState<any | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -28,19 +29,31 @@ export default function CatChatScreen({ navigation }: Props) {
   }, [msgs.length]);
 
   useEffect(() => {
-    return () => { stopAndUnload(lullaby); };
-  }, [lullaby]);
+    return () => { stopAndUnload(lullaby); stopAndUnload(softKitty); };
+  }, [lullaby, softKitty]);
 
   async function send() {
     const text = input.trim();
     if (!text) return;
     setInput('');
 
-    // Intercept "soft kitty" style requests
+    // Intercept "soft kitty" requests BEFORE calling the API
     if (/soft\s*kitty/i.test(text) || (/sing/i.test(text) && /kitty/i.test(text))) {
+      await stopAndUnload(softKitty);
+      setMsgs(m => [
+        ...m,
+        { role: 'user', content: text },
+        { role: 'assistant', content: "Okay—singing Soft Kitty now. I’ll keep it soft. Tap the banner to stop. 💜" }
+      ]);
+      const s = await playSong('softkitty', 0.65);
+      setSoftKitty(s);
+      return; // don't hit the API for this one
+    }
+
+    // Intercept Mochi lullaby keyword as a fallback option
+    if (/mochi\s*(cozy)?\s*lullaby/i.test(text)) {
       await stopAndUnload(lullaby);
       const reply =
-        "I can’t sing that exact song, but I’ll sing you my own.\n" +
         "Here’s *Mochi’s Cozy Lullaby*:\n\n" +
         "Slow little heart, soft and steady.\n" +
         "Warm cozy paws—I’m right here, ready.\n" +
@@ -99,6 +112,15 @@ export default function CatChatScreen({ navigation }: Props) {
         ))}
         {loading && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
       </ScrollView>
+
+      {softKitty && (
+        <Pressable
+          onPress={async () => { await stopAndUnload(softKitty); setSoftKitty(null); }}
+          style={{ alignSelf: 'center', marginBottom: 8, backgroundColor: colors.surface, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 }}
+        >
+          <Text style={[textStyles.body, { color: colors.mutedText }]}>🔈 Soft Kitty playing — tap to stop</Text>
+        </Pressable>
+      )}
 
       {lullaby && (
         <Pressable
