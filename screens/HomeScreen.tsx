@@ -8,7 +8,7 @@ import CatAvatar from '../components/CatAvatar';
 import PawButton from '../components/PawButton';
 import { calcJournalStreak, loadEntries } from '../utils/storage';
 import { soft, selection } from '../utils/haptics';
-import { playLoop, stopAndUnload } from '../utils/audio';
+import { playLoop, stopAndUnload, resumeAll } from '../utils/audio';
 import type { Sound } from 'expo-av';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -25,11 +25,12 @@ export default function HomeScreen({ navigation }: Props) {
       setStreak(calcJournalStreak(entries));
     })();
     return () => { stopAndUnload(purr); };
-  }, []);
+  }, [purr]);
 
   async function onCatPressIn() {
     setCuddling(true);
     selection();
+    await resumeAll();
     const s = await playLoop('softpurr', 0.28);
     setPurr(s);
   }
@@ -62,7 +63,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       <Card title="Cat Chat" subtitle="Talk to Mochi when anxious" onPress={() => navigation.navigate('CatChat')} />
 
-      <Card title="Calm" subtitle="4-7-8 breathing, grounding, chimes" onPress={() => navigation.navigate('Calm')} />
+      <Card title="Calm" subtitle="4-4-4 breathing" onPress={() => navigation.navigate('Calm')} />
       <Card title="Sleep" subtitle="Wind-down, bedside mode, gentle alarm" onPress={() => navigation.navigate('Sleep')} />
       <Card title="Migraine" subtitle="Ultra-dim, soothing sounds, timer" onPress={() => navigation.navigate('Migraine')} />
       <Card title="Journal" subtitle="3-tap micro-log + trends" onPress={() => navigation.navigate('Journal')} right={<PawButton label="Trends" small onPress={() => navigation.navigate('JournalTrends')} />} />

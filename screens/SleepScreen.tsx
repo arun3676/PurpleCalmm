@@ -4,7 +4,7 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useKeepAwake } from 'expo-keep-awake';
-import { playLoop, stopAndUnload, playSong } from '../utils/audio';
+import { playLoop, stopAndUnload, playSong, resumeAll } from '../utils/audio';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
 
@@ -41,6 +41,7 @@ export default function SleepScreen({ navigation }: Props) {
 
   async function onPressIn() {
     setHolding(true);
+    await resumeAll();
     const a = await playLoop('softpurr', 0.35);
     setAnchor(a);
   }
