@@ -1,86 +1,114 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Dimensions } from 'react-native';
-import Animated, { Easing, useSharedValue, withTiming, useAnimatedStyle, interpolate } from 'react-native-reanimated';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable, Animated } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
-import { soft, success } from '../utils/haptics';
-import { playOneShot, stopAndUnload } from '../utils/audio';
-import type { Sound } from 'expo-av';
+import { useKeepAwake } from 'expo-keep-awake';
+import { playOneShot } from '../utils/audio';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Calm'>;
 
-const inhale = 4000;
-const hold = 7000;
-const exhale = 8000;
+const INHALE_MS = 4000;
+const HOLD_MS = 7000;
+const EXHALE_MS = 8000;
+const TOTAL_CYCLES = 6; // <- change if you want more/less
 
-const steps = [
-  { label: 'Inhale', ms: inhale },
-  { label: 'Hold', ms: hold },
-  { label: 'Exhale', ms: exhale }
-];
-
-const grounding = [
-  '5 things you can see',
-  '4 things you can touch',
-  '3 things you can hear',
-  '2 things you can smell',
-  '1 thing you can taste'
-];
+type Phase = 'inhale' | 'hold' | 'exhale';
 
 export default function CalmScreen({ navigation }: Props) {
-  const { colors, reduceMotion } = useAppTheme();
-  const [phase, setPhase] = useState(0);
-  const [cycle, setCycle] = useState(0);
+  const { colors } = useAppTheme();
+  const [phase, setPhase] = useState<Phase>('inhale');
+  const [cycle, setCycle] = useState<number>(1);
+  const [running, setRunning] = useState(true);
   const [showGrounding, setShowGrounding] = useState(false);
-  const progress = useSharedValue(0); // 0 = small, 1 = large
-  const [chime, setChime] = useState<Sound | null>(null);
-  const size = Math.min(Dimensions.get('window').width, 320);
 
-  const style = useAnimatedStyle(() => {
-    const scale = interpolate(progress.value, [0, 1], [0.85, 1.15]);
-    return { transform: [{ scale }] };
-  });
+  const tRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const phaseRef = useRef<Phase>('inhale');
+  const cycleRef = useRef<number>(1);
+  const runningRef = useRef<boolean>(true);
+
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useKeepAwake();
 
   useEffect(() => {
-    let mounted = true;
-    async function run() {
-      // Start small
-      progress.value = 0;
+    phaseRef.current = phase;
+  }, [phase]);
 
-      for (let c = 0; c < 2; c++) {
-        // Inhale -> grow to large
-        if (!mounted) return;
-        setPhase(0);
-        await soft();
-        progress.value = withTiming(1, { duration: reduceMotion ? 200 : inhale, easing: Easing.inOut(Easing.ease) });
-        await new Promise(res => setTimeout(res, reduceMotion ? 200 : inhale));
+  useEffect(() => {
+    cycleRef.current = cycle;
+    if (cycle >= 2) setShowGrounding(true); // reveal after 2 full cycles
+  }, [cycle]);
 
-        // Hold -> stay large
-        if (!mounted) return;
-        setPhase(1);
-        progress.value = withTiming(1, { duration: reduceMotion ? 200 : hold, easing: Easing.linear });
-        await new Promise(res => setTimeout(res, reduceMotion ? 200 : hold));
+  useEffect(() => {
+    runningRef.current = running;
+    if (running) scheduleNext(0); // (re)start immediately
+    else clearTimer();
+    return clearTimer;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running]);
 
-        // Exhale -> shrink to small
-        if (!mounted) return;
-        setPhase(2);
-        progress.value = withTiming(0, { duration: reduceMotion ? 200 : exhale, easing: Easing.inOut(Easing.ease) });
-        await new Promise(res => setTimeout(res, reduceMotion ? 200 : exhale));
+  useEffect(() => {
+    // start on mount
+    scheduleNext(0);
+    return clearTimer;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-        setCycle(prev => prev + 1);
-        const s = await playOneShot('chime', 0.4);
-        setChime(s);
-      }
-      setShowGrounding(true);
-      await success();
+  function clearTimer() {
+    if (tRef.current) {
+      clearTimeout(tRef.current);
+      tRef.current = null;
     }
-    run();
-    return () => {
-      mounted = false;
-      stopAndUnload(chime);
-    };
-  }, [reduceMotion]);
+  }
+
+  function animatePhase(p: Phase) {
+    // simple scale animation to match breath direction
+    const to = p === 'inhale' ? 1.15 : p === 'exhale' ? 0.85 : 1.0;
+    const dur = p === 'inhale' ? INHALE_MS : p === 'exhale' ? EXHALE_MS : HOLD_MS;
+    Animated.timing(scale, { toValue: to, duration: dur, useNativeDriver: true }).start();
+  }
+
+  async function scheduleNext(delay = 0) {
+    clearTimer();
+    if (!runningRef.current) return;
+
+    const p = phaseRef.current;
+    const dur = p === 'inhale' ? INHALE_MS : p === 'hold' ? HOLD_MS : EXHALE_MS;
+
+    animatePhase(p);
+
+    tRef.current = setTimeout(async () => {
+      if (!runningRef.current) return;
+
+      // advance phase
+      let next: Phase;
+      if (p === 'inhale') next = 'hold';
+      else if (p === 'hold') next = 'exhale';
+      else {
+        // exhale ended -> count a full cycle
+        const nextCycle = cycleRef.current + 1;
+        setCycle(nextCycle);
+
+        if (nextCycle > TOTAL_CYCLES) {
+          setRunning(false);
+          await playOneShot('chime', 0.5);
+          return; // finished
+        }
+        next = 'inhale';
+      }
+
+      setPhase(next);
+      await playOneShot('chime', 0.35); // soft cue between phases
+      scheduleNext(0);
+    }, dur + delay);
+  }
+
+  function labelFor(p: Phase) {
+    if (p === 'inhale') return 'Inhale';
+    if (p === 'hold') return 'Hold';
+    return 'Exhale';
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
@@ -90,37 +118,62 @@ export default function CalmScreen({ navigation }: Props) {
 
       <View style={{ alignItems: 'center', marginTop: 24 }}>
         <Text style={[textStyles.h1, { color: colors.text }]}>Calm</Text>
-        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>4-7-8 breathing</Text>
+        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>4-7-8 breathing</Text>
       </View>
 
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ alignItems: 'center', marginTop: 24 }}>
         <Animated.View
-          style={[
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: colors.primaryDark,
-              alignItems: 'center',
-              justifyContent: 'center'
-            },
-            style
-          ]}
+          style={{
+            width: 260,
+            height: 260,
+            borderRadius: 130,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: [{ scale }],
+          }}
         >
-          <Text style={[textStyles.h2, { color: colors.text }]}>{steps[phase].label}</Text>
+          <Text style={[textStyles.h2, { color: colors.text }]}>{labelFor(phase)}</Text>
         </Animated.View>
-        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 12 }]}>Cycle: {cycle + 1}</Text>
+        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 10 }]}>
+          Cycle: {cycle} / {TOTAL_CYCLES}
+        </Text>
+
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+          <Pressable
+            onPress={() => setRunning((v) => !v)}
+            style={{ backgroundColor: colors.primaryDark, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 12 }}
+          >
+            <Text style={[textStyles.bodyMedium, { color: colors.text }]}>{running ? 'Pause' : 'Resume'}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              clearTimer();
+              setPhase('inhale');
+              setCycle(1);
+              setShowGrounding(false);
+              setRunning(true);
+              scheduleNext(0);
+            }}
+            style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 12 }}
+          >
+            <Text style={[textStyles.bodyMedium, { color: colors.text }]}>Restart</Text>
+          </Pressable>
+        </View>
       </View>
 
-      {showGrounding ? (
-        <View style={{ marginBottom: 24 }}>
-          <Text style={[textStyles.h2, { color: colors.text, marginBottom: 8 }]}>5-4-3-2-1 Grounding</Text>
-          {grounding.map((g, i) => (
-            <Text key={i} style={[textStyles.body, { color: colors.mutedText, marginVertical: 2 }]}>• {g}</Text>
-          ))}
+      {/* Grounding appears after 2 full cycles, but breathing continues */}
+      {showGrounding && (
+        <View style={{ marginTop: 28 }}>
+          <Text style={[textStyles.h2, { color: colors.text }]}>5-4-3-2-1 Grounding</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>• 5 things you can see</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText }]}>• 4 things you can touch</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText }]}>• 3 things you can hear</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText }]}>• 2 things you can smell</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText }]}>• 1 thing you can taste</Text>
           <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>You’re safe. You’re here. Breathe.</Text>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }
