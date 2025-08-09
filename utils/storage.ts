@@ -18,7 +18,7 @@ export type Settings = {
   comfortPack?: { quotes?: string[]; images?: string[] };
 };
 
-const KEYS = { entries: 'pc_entries', settings: 'pc_settings' };
+const KEYS = { entries: 'pc_entries', settings: 'pc_settings', stickers: 'pc_stickers' };
 const hasLS = typeof window !== 'undefined' && !!window.localStorage;
 
 // Safe getters/setters (AsyncStorage → fallback to localStorage → in-memory)
@@ -81,4 +81,16 @@ export function calcJournalStreak(entries: Entry[]): number {
     if (days.has(d.toDateString())) streak++; else break;
   }
   return streak;
+}
+
+// ---- Stickers ----
+export type Sticker = { id: string; name: string; emoji: string; ts: number };
+export async function loadStickers(): Promise<Sticker[]> {
+  const raw = await getItem(KEYS.stickers);
+  try { return raw ? JSON.parse(raw) : []; } catch { return []; }
+}
+export async function saveSticker(s: Sticker) {
+  const all = await loadStickers();
+  all.unshift(s);
+  await setItem(KEYS.stickers, JSON.stringify(all));
 }
