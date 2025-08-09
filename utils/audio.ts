@@ -92,6 +92,3 @@ export async function playLoop(name: 'softpurr', volume = 0.35) {
   if (Platform.OS === 'web') { await resumeAll(); if (name === 'softpurr') return webSoftPurr(volume); }
   return null;
 }
-
-// Optional stub so optional chaining calls like playLoop?.() elsewhere don't crash imports
-export const playLoop: any = undefined;
