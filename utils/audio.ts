@@ -226,7 +226,7 @@ export async function setVolume(sound: any, v: number) {
   } catch {}
 }
 
-export async function playSong(name: 'softkitty', volume = 0.6) {
+export async function playSong(name: 'softkitty', volume = 0.65) {
   try {
     // Ensure web audio is unlocked (no-op if not applicable)
     // @ts-ignore

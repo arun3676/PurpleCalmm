@@ -53,7 +53,7 @@ export default function SleepScreen({ navigation }: Props) {
     setHolding(false);
     await stopAndUnload(anchor);
     await playOneShot('chime', 0.5);
-    await speak('good night', { rate: 0.9, pitch: 1.05, volume: 0.9 });
+    await speak('잘 자요', { lang: 'ko-KR', rate: 0.94, pitch: 1.15, volume: 0.95 });
     await goodNightTaeVibe();
   }
 

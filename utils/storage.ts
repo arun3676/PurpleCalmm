@@ -38,10 +38,28 @@ export async function loadEntries(): Promise<Entry[]> {
   try { return raw ? JSON.parse(raw) : []; } catch { return []; }
 }
 
+export async function setEntries(all: Entry[]) {
+  await setItem(KEYS.entries, JSON.stringify(all));
+}
+
 export async function saveEntry(e: Entry) {
   const all = await loadEntries();
   all.unshift(e);
-  await setItem(KEYS.entries, JSON.stringify(all));
+  await setEntries(all);
+}
+
+export async function deleteEntry(id: string) {
+  const all = await loadEntries();
+  const next = all.filter(e => e.id !== id);
+  await setEntries(next);
+  return next;
+}
+
+export async function clearJournal() {
+  const all = await loadEntries();
+  const next = all.filter(e => e.type !== 'journal');
+  await setEntries(next);
+  return next;
 }
 
 export async function loadSettings(): Promise<Settings | null> {
