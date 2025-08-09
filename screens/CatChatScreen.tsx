@@ -5,7 +5,7 @@ import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { saveEntry } from '../utils/storage';
 import { CAT_SYSTEM_PROMPT } from '../utils/catPrompt';
-import { playLoop, stopAndUnload, playOneShot } from '../utils/audio';
+import { playLoop, stopAndUnload, playOneShot, playMochiLullaby } from '../utils/audio';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatChat'>;
 
@@ -20,16 +20,38 @@ export default function CatChatScreen({ navigation }: Props) {
   const [input, setInput] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lullaby, setLullaby] = useState<any | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: true });
   }, [msgs.length]);
 
+  useEffect(() => {
+    return () => { stopAndUnload(lullaby); };
+  }, [lullaby]);
+
   async function send() {
     const text = input.trim();
     if (!text) return;
     setInput('');
+
+    // Intercept "soft kitty" style requests
+    if (/soft\s*kitty/i.test(text) || (/sing/i.test(text) && /kitty/i.test(text))) {
+      await stopAndUnload(lullaby);
+      const reply =
+        "I can’t sing that exact song, but I’ll sing you my own.\n" +
+        "Here’s *Mochi’s Cozy Lullaby*:\n\n" +
+        "Slow little heart, soft and steady.\n" +
+        "Warm cozy paws—I’m right here, ready.\n" +
+        "Close your eyes; breathe in the night.\n" +
+        "Purr-purr rest now; you’re safe and light. 💜";
+      setMsgs(m => [...m, { role: 'user', content: text }, { role: 'assistant', content: reply }]);
+      const node = await playMochiLullaby(0.38);
+      setLullaby(node);
+      return;
+    }
+
     const newMsgs = [...msgs, { role: 'user', content: text }];
     setMsgs(newMsgs);
     setLoading(true);
@@ -77,6 +99,15 @@ export default function CatChatScreen({ navigation }: Props) {
         ))}
         {loading && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
       </ScrollView>
+
+      {lullaby && (
+        <Pressable
+          onPress={async () => { await stopAndUnload(lullaby); setLullaby(null); }}
+          style={{ alignSelf: 'center', marginBottom: 8, backgroundColor: colors.surface, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 }}
+        >
+          <Text style={[textStyles.body, { color: colors.mutedText }]}>🔈 Lullaby playing — Tap to stop</Text>
+        </Pressable>
+      )}
 
       <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#00000033' }}>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>

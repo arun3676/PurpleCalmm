@@ -224,3 +224,70 @@ export async function setVolume(sound: any, v: number) {
     if (typeof sound.setVolume === 'function') sound.setVolume(v);
   } catch {}
 }
+
+// --- Mochi's Cozy Lullaby (web synth) ---
+export async function playMochiLullaby(volume = 0.4): Promise<any> {
+  // Web-only synth. On native, just return null (you can wire a real mp3 later).
+  // Reuses the same AudioContext pattern we already use.
+  // If your file doesn't have ctx()/makeGain helpers, copy minimal versions here like in earlier code.
+  // Assumes you already implemented ctx() and makeGain() in this file. If not, tell me and I’ll inline them.
+
+  // @ts-ignore
+  const hasCtx = typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined';
+  if (!hasCtx) return null;
+  // @ts-ignore
+  const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+  // @ts-ignore
+  const c: AudioContext = (globalThis as any).__mochiCtx || new Ctx();
+  // @ts-ignore
+  (globalThis as any).__mochiCtx = c;
+  if (c.state !== 'running') { try { await c.resume(); } catch {} }
+
+  const master = c.createGain();
+  master.gain.value = volume;
+  master.connect(c.destination);
+
+  const notes: Array<[number, number]> = [
+    // freq (Hz), duration (ms) — soft, lullaby-ish
+    [392, 700], [440, 700], [494, 700], [523, 1100],
+    [494, 700], [440, 700], [392, 1000],
+    [392, 700], [440, 700], [494, 700], [523, 1100],
+  ];
+
+  const made: OscillatorNode[] = [];
+  const timers: any[] = [];
+  let t = 0;
+
+  function schedule(freq: number, durMs: number) {
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+
+    g.gain.value = 0.0001;
+    osc.connect(g).connect(master);
+
+    const startAt = c.currentTime + t / 1000;
+    const stopAt = startAt + durMs / 1000;
+
+    osc.start(startAt);
+    // gentle attack/decay
+    g.gain.setValueAtTime(0.0001, startAt);
+    g.gain.linearRampToValueAtTime(volume, startAt + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, stopAt);
+    osc.stop(stopAt);
+
+    made.push(osc);
+    t += durMs + 90;
+  }
+
+  notes.forEach(([f, d]) => schedule(f, d));
+
+  return {
+    stopAsync: async () => {
+      try { timers.forEach(clearTimeout); } catch {}
+      try { made.forEach(o => { try { o.stop(); } catch {} }); } catch {}
+    },
+    unloadAsync: async () => {}
+  };
+}
