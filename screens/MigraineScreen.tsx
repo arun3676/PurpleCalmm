@@ -4,7 +4,7 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import * as Brightness from 'expo-brightness';
-import { playSong, stopAndUnload, stopAllSongs, resumeAll, playMeowLoop } from '../utils/audio';
+import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
 import { scheduleIn } from '../utils/notifications';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
@@ -75,7 +75,7 @@ export default function MigraineScreen({ navigation }: Props) {
                 setMeow(null);
               } else {
                 await stopAllSongs();
-                const s = await playMeowLoop(0.6);
+                const s = await playSong('sadmeow', 0.7, true);
                 setMeow(s);
               }
             }}
