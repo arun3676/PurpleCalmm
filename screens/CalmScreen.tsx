@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Animated } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
+import Svg, { Path } from 'react-native-svg';
 
 const PHASE = 4000; // 4s each
 type Phase = 'inhale'|'hold'|'exhale';
@@ -33,7 +34,6 @@ export default function CalmScreen({ navigation }: any) {
   function celebrateOnce() { setCelebrate(true); setTimeout(() => setCelebrate(false), 1100); }
 
   const label = phase==='inhale'?'Inhale':phase==='hold'?'Hold':'Exhale';
-  const color = phase==='inhale'?colors.primary:phase==='hold'?colors.surface:colors.primaryDark;
 
   return (
     <View style={{ flex:1, backgroundColor: colors.background, padding:16 }}>
@@ -47,10 +47,28 @@ export default function CalmScreen({ navigation }: any) {
       </View>
 
       <View style={{ alignItems:'center', marginTop:24 }}>
-        <Animated.View style={{ width:260, height:260, borderRadius:130, backgroundColor: color, alignItems:'center', justifyContent:'center', transform:[{ scale }] }}>
-          <Text style={[textStyles.h2, { color: colors.text }]}>{label}</Text>
-          <Text style={[textStyles.body, { color: colors.text, marginTop:6 }]}>{sec}s</Text>
-        </Animated.View>
+        <View style={{ width: 260, height: 260, position: 'relative', alignItems:'center', justifyContent:'center' }}>
+          {/* Ears */}
+          <Svg width={260} height={260} style={{ position: 'absolute', top: 0, left: 0 }}>
+            <Path d="M80 42 L110 68 L100 20 Z" fill={colors.primaryDark} />
+            <Path d="M180 42 L150 68 L160 20 Z" fill={colors.primaryDark} />
+          </Svg>
+          {/* Belly bubble */}
+          <Animated.View
+            style={{
+              width: 220,
+              height: 220,
+              borderRadius: 110,
+              backgroundColor: colors.primary,
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: [{ scale }]
+            }}
+          >
+            <Text style={[textStyles.h2, { color: colors.text }]}>{label}</Text>
+            <Text style={[textStyles.body, { color: colors.text, marginTop: 6 }]}>{sec}s</Text>
+          </Animated.View>
+        </View>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop:10 }]}>Cycle {cycleInSet}/4</Text>
       </View>
 
