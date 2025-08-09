@@ -7,6 +7,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { playLoop, stopAndUnload, playOneShot, goodNightTaeVibe } from '../utils/audio';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
+import { speak } from '../utils/voice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Sleep'>;
 
@@ -52,6 +53,7 @@ export default function SleepScreen({ navigation }: Props) {
     setHolding(false);
     await stopAndUnload(anchor);
     await playOneShot('chime', 0.5);
+    await speak('good night', { rate: 0.9, pitch: 1.05, volume: 0.9 });
     await goodNightTaeVibe();
   }
 
