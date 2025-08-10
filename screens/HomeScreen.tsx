@@ -6,8 +6,10 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import Card from '../components/Card';
 import CatAvatar from '../components/CatAvatar';
 import PawButton from '../components/PawButton';
+import PawRow from '../components/PawRow';
+import CatHero from '../components/CatHero';
 import { calcJournalStreak, loadEntries, loadStickers } from '../utils/storage';
-import { soft, selection } from '../utils/haptics';
+import { selection } from '../utils/haptics';
 import { playLoop, stopAndUnload, resumeAll } from '../utils/audio';
 import type { Sound } from 'expo-av';
 
@@ -43,7 +45,9 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <CatHero />
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 16 }}>
         <View>
           <Text style={[textStyles.h1, { color: colors.text }]}>Purrple Calm</Text>
           <Text style={[textStyles.body, { color: colors.mutedText }]}>{vibe ? 'V-inspired vibe: ON 🎷💜' : 'Vibe: Classic Purple'}</Text>
@@ -78,6 +82,8 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         )}
       </View>
+
+      <PawRow />
 
       <Card title="Cat Chat" subtitle="Talk to Mochi when anxious" onPress={() => navigation.navigate('CatChat')} />
 
