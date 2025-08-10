@@ -77,23 +77,20 @@ export default function MigraineScreen({ navigation }: Props) {
     return () => { stopAndUnload(meow); };
   }, [meow]);
 
-  function beginReset() {
-    if (resetRunning) return;
-    setResetRunning(true); setResetStep(0);
-    const id = setInterval(() => {
-      setResetStep(s => {
-        const n = s + 1;
-        if (n >= 4) { clearInterval(id); setResetRunning(false); }
-        return n;
-      });
-    }, 15000);
-  }
-
   const stepText = [
     'Dim lights. Unclench jaw. Shoulders down.',
     'Inhale 4 • Exhale 6 — slow and soft.',
     'Cool pack on neck / warm hands if available.',
     'Close eyes: name 3 sounds, 2 touches, 1 smell.'
+  ];
+
+  // Quick tips list
+  const QUICK_TIPS = [
+    'Dim screen and reduce noise.',
+    'Small sips of water (enable reminder below).',
+    'Cool pack on neck or warm hands.',
+    '4 in / 6 out breathing for 1 min.',
+    'Sudden new or severe symptoms → seek medical care.',
   ];
 
   const [exerciseOpen, setExerciseOpen] = React.useState<{title:string, steps:{label:string, seconds:number}[]} | null>(null);
@@ -189,27 +186,13 @@ export default function MigraineScreen({ navigation }: Props) {
           )}
         </View>
 
-        <View style={{ marginTop: 24, backgroundColor: colors.surface, borderRadius: 12, padding: 12 }}>
+        <View style={{ marginTop: 18, backgroundColor: colors.surface, padding: 14, borderRadius: 16 }}>
           <Text style={[textStyles.h2, { color: colors.text }]}>Quick Tips</Text>
-          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 6 }]}> 
-            • Dim screen and reduce noise{"
-"}
-            • Small sips of water (enable reminder below){"
-"}
-            • Cool pack on neck or warm hands{"
-"}
-            • 4 in / 6 out breathing for 1 min{"
-"}
-            • Sudden new or severe symptoms → seek medical care.
-          </Text>
-          <Pressable onPress={beginReset} style={{ alignSelf: 'flex-start', marginTop: 10 }}>
-            <Text style={[textStyles.body, { color: colors.accent }]}>{resetRunning ? 'Reset running…' : 'Start 60-second Reset ▷'}</Text>
-          </Pressable>
-          {resetRunning && (
-            <View style={{ marginTop: 8, backgroundColor: colors.background, borderRadius: 8, padding: 10 }}>
-              <Text style={[textStyles.body, { color: colors.text }]}>{stepText[resetStep]}</Text>
-            </View>
-          )}
+          {QUICK_TIPS.map((line, i) => (
+            <Text key={i} style={[textStyles.body, { color: colors.mutedText, marginTop: i ? 6 : 8 }]}>
+              • {line}
+            </Text>
+          ))}
         </View>
 
         <View style={{ marginTop: 22 }}>
