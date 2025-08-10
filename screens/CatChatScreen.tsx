@@ -62,17 +62,20 @@ export default function CatChatScreen({ navigation }: Props) {
 
   async function onSend() {
     const text = input.trim();
-    if (!text) return;
+    if (!text || thinking) return;
     setInput('');
     const next = [...messages, { role:'user', content: text }];
     setMessages(next);
     setThinking(true);
     try {
       const mochi = await askMochi(next);
-      setMessages(m => [...m, { role:'assistant', content: mochi.reply + (mochi.followup ? '\n\n' + mochi.followup : '') }]);
-      await handleAction(mochi);
+      setMessages(m => [...m, {
+        role:'assistant',
+        content: mochi.reply + (mochi.followup ? '\n\n' + mochi.followup : '')
+      }]);
+      if (typeof handleAction === 'function') { await handleAction(mochi); }
     } catch (e) {
-      setMessages(m => [...m, { role:'assistant', content: "Mew… I couldn’t reach the cloud. Tap to retry or ask again." }]);
+      setMessages(m => [...m, { role:'assistant', content: "Mew… I couldn’t reach the cloud. Tap to retry." }]);
     } finally {
       setThinking(false);
     }

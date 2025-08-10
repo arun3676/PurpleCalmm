@@ -26,8 +26,7 @@ function sanitize(o: any) {
 }
 
 const FALLBACK = sanitize({
-  reply:
-    "Mew—the cloud was fussy. Try 4-4-4: inhale 4, hold 4, exhale 4. Want me to start Calm or set a 5-min migraine timer?",
+  reply: "Mew—the cloud was fussy. Try 4-4-4: inhale 4, hold 4, exhale 4. Want me to start Calm or set a 5-min migraine timer?",
   followup: "I can also save a quick note for you.",
   action: 'NONE',
   minutes: null,
@@ -38,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   const key = process.env.OPENAI_API_KEY;
-  if (!key) return res.status(200).setHeader('x-mochi', 'no-key-fallback').json(FALLBACK);
+  if (!key) return res.status(200).setHeader('x-mochi','no-key-fallback').json(FALLBACK);
 
   let messages: Msg[] = [];
   try {
@@ -49,9 +48,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (messages.length === 0) return res.status(200).setHeader('x-mochi','no-messages-fallback').json(FALLBACK);
 
-  // 20s hard timeout so we never hit Vercel 300s
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 20_000);
+  const timer = setTimeout(() => ctrl.abort(), 20_000); // 20s hard timeout
 
   try {
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -75,7 +73,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     clearTimeout(timer);
 
     if (!r.ok) {
-      const detail = await r.text().catch(()=>' ');
       return res.status(200).setHeader('x-mochi', `upstream-${r.status}`).json(FALLBACK);
     }
 
