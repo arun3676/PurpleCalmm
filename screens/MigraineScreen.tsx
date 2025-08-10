@@ -10,6 +10,7 @@ import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
 import NowPlayingBar from '../components/NowPlayingBar';
 import { useSettings } from '../providers/SettingsProvider';
+import ExerciseRunner from '../components/ExerciseRunner';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
 
@@ -58,6 +59,11 @@ export default function MigraineScreen({ navigation }: Props) {
     'Cool pack on neck / warm hands if available.',
     'Close eyes: name 3 sounds, 2 touches, 1 smell.'
   ];
+
+  const [exerciseOpen, setExerciseOpen] = React.useState<{title:string, steps:{label:string, seconds:number}[]} | null>(null);
+  const EX_60_RESET = { title: '60-second Reset', steps: [ { label: '4-4-4 Breathing', seconds: 20 }, { label: 'Temple Massage – Left', seconds: 20 }, { label: 'Temple Massage – Right', seconds: 20 } ] };
+  const EX_EYE_SOOTHE = { title: 'Eye Soothe', steps: [ { label: 'Look Far (relax focus)', seconds: 20 }, { label: 'Blink & Soften Eyes', seconds: 10 }, { label: 'Palming (cover eyes)', seconds: 20 } ] };
+  const EX_NECK_RELEASE = { title: 'Neck Release', steps: [ { label: 'Left ear → left shoulder', seconds: 20 }, { label: 'Right ear → right shoulder', seconds: 20 }, { label: 'Chin tuck (gentle)', seconds: 20 } ] };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
@@ -135,6 +141,16 @@ export default function MigraineScreen({ navigation }: Props) {
         )}
       </View>
 
+      <View style={{ marginTop: 22 }}>
+        <Text style={[textStyles.h2, { color: colors.text }]}>Exercises</Text>
+        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to run a short guided set.</Text>
+        <View style={{ flexDirection:'row', flexWrap:'wrap' as const, gap:10, marginTop:8 }}>
+          <PawButton label="60-sec Reset" onPress={() => setExerciseOpen(EX_60_RESET)} />
+          <PawButton label="Eye Soothe" onPress={() => setExerciseOpen(EX_EYE_SOOTHE)} />
+          <PawButton label="Neck Release" onPress={() => setExerciseOpen(EX_NECK_RELEASE)} />
+        </View>
+      </View>
+
       <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center' }}>
         <Switch value={hydration} onValueChange={setHydration} />
         <Text style={[textStyles.body, { color: colors.mutedText, marginLeft: 8 }]}>Hydration reminder</Text>
@@ -145,6 +161,16 @@ export default function MigraineScreen({ navigation }: Props) {
       </View>
 
       <NowPlayingBar visible={!!meow} />
+      {exerciseOpen && (
+        <ExerciseRunner
+          visible={!!exerciseOpen}
+          title={exerciseOpen.title}
+          steps={exerciseOpen.steps}
+          colors={colors}
+          textStyles={textStyles}
+          onClose={() => setExerciseOpen(null)}
+        />
+      )}
     </View>
   );
 }
