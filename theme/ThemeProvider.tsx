@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [vibe, setVibe] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
-  const colors = useMemo<AppPalette>(() => (themeName === 'vjazz' || vibe ? VNightJazz : PurpleTheme), [themeName, vibe]);
+  const colors = useMemo<AppPalette>(() => PurpleTheme, [themeName, vibe]);
 
   const [manropeLoaded] = useManrope({ Manrope_600_SemiBold, Manrope_700_Bold });
   const [poppinsLoaded] = usePoppins({ Poppins_700_Bold });
@@ -35,11 +35,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       const s = await loadSettings();
-      if (s) {
-        setVibe(Boolean(s.vibe));
-        setReduceMotion(Boolean(s.reduceMotion));
-        setThemeName((s.themeName as any) || 'purple');
-      }
+      // Force the new light Lavender theme regardless of previous dark settings
+      setVibe(false);
+      setReduceMotion(Boolean(s?.reduceMotion));
+      setThemeName('purple');
+      const normalized: Settings = { themeName: 'purple', vibe: false, reduceMotion: Boolean(s?.reduceMotion) };
+      await saveSettings(normalized);
     })();
   }, []);
 
