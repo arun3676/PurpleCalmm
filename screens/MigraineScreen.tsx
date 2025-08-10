@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Switch, Platform, ScrollView, Animated } from 'react-native';
+import { View, Text, Pressable, Platform, ScrollView, Animated } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import * as Brightness from 'expo-brightness';
 import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
-import { scheduleIn } from '../utils/notifications';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
 import NowPlayingBar from '../components/NowPlayingBar';
@@ -20,7 +19,6 @@ export default function MigraineScreen({ navigation }: Props) {
   const { settings, setMigraineMinutes } = useSettings();
   const [meow, setMeow] = useState<any | null>(null);
   const [mins, setMins] = React.useState<number>(settings.migraineMinutes);
-  const [hydration, setHydration] = useState(false);
   const [resetRunning, setResetRunning] = useState(false);
   const [resetStep, setResetStep] = useState(0);
 
@@ -87,7 +85,7 @@ export default function MigraineScreen({ navigation }: Props) {
   // Quick tips list
   const QUICK_TIPS = [
     'Dim screen and reduce noise.',
-    'Small sips of water (enable reminder below).',
+    'Small, steady sips of water help prevent dehydration — a common migraine trigger.',
     'Cool pack on neck or warm hands.',
     '4 in / 6 out breathing for 1 min.',
     'Sudden new or severe symptoms → seek medical care.',
@@ -184,6 +182,10 @@ export default function MigraineScreen({ navigation }: Props) {
           {running && (
             <Text style={[textStyles.body, { color: colors.mutedText, marginTop:6 }]}>Time left: {fmt(leftMs)}</Text>
           )}
+
+          <View style={{ marginTop: 8 }}>
+            <Text style={[{ fontSize: 12, lineHeight: 16 }, { color: colors.mutedText }]}>Tip: Small, steady sips of water help prevent dehydration — a common migraine trigger.</Text>
+          </View>
         </View>
 
         <View style={{ marginTop: 18, backgroundColor: colors.surface, padding: 14, borderRadius: 16 }}>
@@ -205,10 +207,6 @@ export default function MigraineScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center' }}>
-          <Switch value={hydration} onValueChange={setHydration} />
-          <Text style={[textStyles.body, { color: colors.mutedText, marginLeft: 8 }]}>Hydration reminder</Text>
-        </View>
         <View style={{ marginTop: 12, flexDirection: 'row', gap: 12, marginBottom: 24 }}>
           <PawButton label="Start Timer" onPress={async () => { await resumeAll(); startSession(mins); }} />
           <PawButton label="Quick Note" onPress={quickNote} />
