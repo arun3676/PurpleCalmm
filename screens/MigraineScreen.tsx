@@ -96,7 +96,7 @@ export default function MigraineScreen({ navigation }: Props) {
   ];
 
   // Quick tips list
-  const QUICK_TIPS = [
+  const QUICK_TIPS: string[] = [
     'Dim screen and reduce noise.',
     'Small, steady sips of water help prevent dehydration — a common migraine trigger.',
     'Cool pack on neck or warm hands.',
@@ -201,13 +201,15 @@ export default function MigraineScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <View style={{ marginTop: 18, backgroundColor: colors.surface, padding: 14, borderRadius: 16 }}>
+        <View style={{ marginTop: 16, backgroundColor: colors.surface, borderRadius: 16, padding: 14 }}>
           <Text style={[textStyles.h2, { color: colors.text }]}>Quick Tips</Text>
-          {QUICK_TIPS.map((line, i) => (
-            <Text key={i} style={[textStyles.body, { color: colors.mutedText, marginTop: i ? 6 : 8 }]}>
-              • {line}
-            </Text>
-          ))}
+          <View style={{ marginTop: 8 }}>
+            {QUICK_TIPS.map((t) => (
+              <Text key={t} style={[textStyles.body, { color: colors.mutedText, marginBottom: 6 }]}>
+                • {t}
+              </Text>
+            ))}
+          </View>
         </View>
 
         <View style={{ marginTop: 22 }}>
