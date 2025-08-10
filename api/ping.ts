@@ -1,6 +1,5 @@
-export const config = { runtime: 'edge' } as const;
-export default async function handler() {
-  return new Response(JSON.stringify({ ok: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default function handler(_req: VercelRequest, res: VercelResponse) {
+  res.status(200).json({ ok: true, runtime: 'node' });
 }
