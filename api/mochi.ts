@@ -1,72 +1,80 @@
-export const config = { runtime: 'edge' } as const;
+export const runtime = 'edge';
 
-type Msg = { role: 'user'|'assistant'|'system'; content: string };
+type Role = 'user' | 'assistant' | 'system';
+type Msg = { role: Role; content: string };
 
 const SYSTEM = `
-You are **Mochi the Cat**, a comforting cat friend.
-Style: gentle, warm, compact. 1 empathetic line, then 2–4 specific steps.
-Ask at most ONE short follow-up when useful. Use tiny cat-isms sparingly
-("mew", "purr")—no overdoing it. Avoid generic platitudes.
-
-Safety: If user mentions self-harm, panic emergency, stroke signs, or
-severe migraine red flags (worst headache, new neuro symptoms, fever+rash),
-respond kindly and advise urgent help with local numbers if asked.
-
-Actions: When appropriate, set:
-- PLAY_SOFT_KITTY         (no lyrics—just trigger song)
-- START_BREATHING         (4-4-4 calm screen)
-- START_MIGRAINE_TIMER    (minutes: int)
-- START_SLEEP             (goodnight flow)
-- SAVE_JOURNAL            (journal: short line)
-- NONE
-
-Output STRICT JSON:
-{
- "reply": "string",
- "followup": "string | null",
- "action": "PLAY_SOFT_KITTY|START_BREATHING|START_MIGRAINE_TIMER|START_SLEEP|SAVE_JOURNAL|NONE",
- "minutes": number | null,
- "journal": "string | null"
-}
-Never output song lyrics. If asked to sing, set action PLAY_SOFT_KITTY.
-Keep reply ≤ 120 words, accessible, migraine/sleep/grounding tips when relevant.
+You are Mochi the Cat, a gentle, practical companion.
+Style: brief empathy + specific steps. Cat-isms lightly ("mew", "purr").
+If asked to sing, set action PLAY_SOFT_KITTY (no lyrics).
+Actions: PLAY_SOFT_KITTY | START_BREATHING | START_MIGRAINE_TIMER | START_SLEEP | SAVE_JOURNAL | NONE
+Return STRICT JSON:
+{"reply":"","followup":null,"action":"PLAY_SOFT_KITTY","minutes":null,"journal":null}
 `;
 
-export default async function handler(req: Request) {
-  try {
-    const { messages } = (await req.json()) as { messages: Msg[] };
-    const trimmed = (messages || []).slice(-12);
+function safeJSON(s: string) { try { return JSON.parse(s); } catch { return null; } }
+function sanitize(o: any) {
+  const A = new Set(['PLAY_SOFT_KITTY','START_BREATHING','START_MIGRAINE_TIMER','START_SLEEP','SAVE_JOURNAL','NONE']);
+  return {
+    reply: String(o?.reply ?? ''),
+    followup: o?.followup ? String(o.followup) : null,
+    action: A.has(String(o?.action)) ? String(o.action) : 'NONE',
+    minutes: Number.isFinite(Number(o?.minutes)) ? Math.max(1, Math.min(120, Math.floor(Number(o.minutes)))) : null,
+    journal: o?.journal ? String(o.journal).slice(0, 300) : null,
+  };
+}
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+export default async function handler(req: Request) {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'POST only' }), { status: 405, headers: { 'Content-Type': 'application/json' }});
+  }
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    return new Response(JSON.stringify({ error: 'Missing OPENAI_API_KEY' }), { status: 500, headers: { 'Content-Type': 'application/json' }});
+  }
+
+  let payload: any;
+  try { payload = await req.json(); }
+  catch { return new Response(JSON.stringify({ error: 'Bad JSON' }), { status: 400, headers: { 'Content-Type': 'application/json' }}); }
+
+  const messages = Array.isArray(payload?.messages) ? (payload.messages as Msg[]).slice(-12) : [];
+
+  // 25s hard timeout to avoid Vercel 300s 504s
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort('timeout'), 25_000);
+
+  try {
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         temperature: 0.7,
         messages: [
           { role: 'system', content: SYSTEM },
-          ...trimmed,
-          { role: 'user', content: 'Reply in the exact JSON schema described above.' }
+          ...messages,
+          { role: 'user', content: 'Reply ONLY with the strict JSON object described above.' }
         ]
-      })
+      }),
+      signal: ctrl.signal
     });
 
-    if (!res.ok) {
-      const t = await res.text();
-      return new Response(JSON.stringify({ error: t }), { status: 500, headers: { 'Content-Type': 'application/json' }});
+    clearTimeout(timer);
+
+    if (!r.ok) {
+      const errText = await r.text().catch(()=> 'error');
+      return new Response(JSON.stringify({ error: 'upstream', detail: errText }), { status: 502, headers: { 'Content-Type': 'application/json' }});
     }
 
-    const data = await res.json();
-    const out = data?.choices?.[0]?.message?.content;
-    let parsed;
-    try { parsed = JSON.parse(out); }
-    catch { parsed = { reply: String(out || '...'), followup: null, action: 'NONE', minutes: null, journal: null }; }
+    const data = await r.json().catch(()=> ({} as any));
+    const raw = data?.choices?.[0]?.message?.content ?? '';
+    const parsed = safeJSON(raw) ?? { reply: String(raw || 'Mew… I had trouble.'), followup: null, action: 'NONE', minutes: null, journal: null };
+    const clean = sanitize(parsed);
 
-    return new Response(JSON.stringify(parsed), { headers: { 'Content-Type': 'application/json' }});
+    return new Response(JSON.stringify(clean), { headers: { 'Content-Type': 'application/json' }});
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message || 'mochi-failed' }), { status: 500, headers: { 'Content-Type': 'application/json' }});
+    clearTimeout(timer);
+    const msg = e?.name === 'AbortError' ? 'timeout' : (e?.message || 'mochi-failed');
+    return new Response(JSON.stringify({ error: msg }), { status: 504, headers: { 'Content-Type': 'application/json' }});
   }
 }
