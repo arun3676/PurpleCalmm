@@ -11,10 +11,12 @@ import NowPlayingBar from '../components/NowPlayingBar';
 import { useSettings } from '../providers/SettingsProvider';
 import ExerciseRunner from '../components/ExerciseRunner';
 import { useRef } from 'react';
+import { useRoute } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
 
 export default function MigraineScreen({ navigation }: Props) {
+  const route = useRoute<any>();
   const { colors } = useAppTheme();
   const { settings, setMigraineMinutes } = useSettings();
   const [meow, setMeow] = useState<any | null>(null);
@@ -38,6 +40,17 @@ export default function MigraineScreen({ navigation }: Props) {
         .start(() => setToast(null)), 1400);
     });
   }
+
+  // auto-start support
+  React.useEffect(() => {
+    const auto = route?.params?.autoStart;
+    const m = route?.params?.minutes;
+    if (auto) {
+      const v = Math.max(1, Math.min(120, Number(m) || mins));
+      setMins(v);
+      startSession(v);
+    }
+  }, [route?.params?.autoStart]);
 
   function clamp(n:number,min=0,max=0.85){ return Math.max(min, Math.min(max, n)); }
   function fmt(ms:number){ const s=Math.max(0, Math.ceil(ms/1000)); const m=Math.floor(s/60); const r=s%60; return `${m}:${String(r).padStart(2,'0')}`; }

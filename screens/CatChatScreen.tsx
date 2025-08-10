@@ -4,81 +4,77 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { saveEntry } from '../utils/storage';
-import { CAT_SYSTEM_PROMPT } from '../utils/catPrompt';
 import { stopAndUnload, playMochiLullaby, playSong, stopAllSongs } from '../utils/audio';
+import { askMochi, ChatMsg } from '../utils/mochiClient';
+import { useNavigation } from '@react-navigation/native';
+import { useSettings } from '../providers/SettingsProvider';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatChat'>;
 
-type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
-
 export default function CatChatScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { role: 'system', content: CAT_SYSTEM_PROMPT },
-    { role: 'assistant', content: "Hi, I'm Mochi. Tell me what's on your mind, I’m listening. 💜" }
+  const nav = useNavigation<any>();
+  const { setMigraineMinutes } = useSettings();
+  const [messages, setMessages] = useState<ChatMsg[]>([
+    { role:'assistant', content: "Mew! I’m Mochi. Tell me what’s up, I’m listening. 💜" }
   ]);
   const [input, setInput] = useState('');
   const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [lullaby, setLullaby] = useState<any | null>(null);
   const [softKitty, setSoftKitty] = useState<any | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
-  useEffect(() => {
-    scrollRef.current?.scrollToEnd({ animated: true });
-  }, [msgs.length]);
+  useEffect(() => { scrollRef.current?.scrollToEnd({ animated: true }); }, [messages.length]);
+  useEffect(() => () => { stopAndUnload(lullaby); stopAndUnload(softKitty); }, [lullaby, softKitty]);
 
-  useEffect(() => {
-    return () => { stopAndUnload(lullaby); stopAndUnload(softKitty); };
-  }, [lullaby, softKitty]);
+  async function handleAction(a: any) {
+    switch (a?.action) {
+      case 'PLAY_SOFT_KITTY': {
+        if (softKitty) { await stopAndUnload(softKitty); setSoftKitty(null); }
+        else { const s = await playSong('softkitty', 0.8, false); setSoftKitty(s); }
+        break;
+      }
+      case 'START_BREATHING':
+        nav.navigate('Calm'); break;
+      case 'START_MIGRAINE_TIMER': {
+        const mins = Math.max(1, Math.min(120, Math.floor(a?.minutes || 10)));
+        await setMigraineMinutes(mins);
+        // pass param to autostart
+        // @ts-ignore
+        nav.navigate('Migraine', { autoStart: true, minutes: mins });
+        break;
+      }
+      case 'START_SLEEP':
+        nav.navigate('Sleep'); break;
+      case 'SAVE_JOURNAL':
+        if (a?.journal) {
+          try {
+            const prev = JSON.parse(localStorage.getItem('purr.journal') || '[]');
+            prev.push({ ts: Date.now(), note: String(a.journal) });
+            localStorage.setItem('purr.journal', JSON.stringify(prev));
+          } catch {}
+        }
+        break;
+      default: break;
+    }
+  }
 
-  async function send() {
+  async function onSend() {
     const text = input.trim();
     if (!text) return;
     setInput('');
-
-    // Intercept "soft kitty" requests BEFORE calling the API
-    if (/soft\s*kitty/i.test(text) || (/sing/i.test(text) && /kitty/i.test(text))) {
-      await stopAndUnload(softKitty);
-      setMsgs(m => [
-        ...m,
-        { role: 'user', content: text },
-        { role: 'assistant', content: "Okay—singing Soft Kitty now. I’ll keep it soft. Tap the button to pause. 💜" }
-      ]);
-      const s = await playSong('softkitty', 0.7, false);
-      setSoftKitty(s);
-      return; // don't hit the API for this one
-    }
-
-    // Intercept Mochi lullaby keyword as a fallback option
-    if (/mochi\s*(cozy)?\s*lullaby/i.test(text)) {
-      await stopAndUnload(lullaby);
-      const reply =
-        "Here’s *Mochi’s Cozy Lullaby*:\n\n" +
-        "Slow little heart, soft and steady.\n" +
-        "Warm cozy paws—I’m right here, ready.\n" +
-        "Close your eyes; breathe in the night.\n" +
-        "Purr-purr rest now; you’re safe and light. 💜";
-      setMsgs(m => [...m, { role: 'user', content: text }, { role: 'assistant', content: reply }]);
-      const node = await playMochiLullaby(0.38);
-      setLullaby(node);
-      return;
-    }
-
-    const newMsgs = [...msgs, { role: 'user', content: text }];
-    setMsgs(newMsgs);
-    setLoading(true);
-
+    const next = [...messages, { role:'user', content: text }];
+    setMessages(next);
+    setThinking(true);
     try {
-      const res = await fetch('/api/cat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: newMsgs.slice(-12) }) });
-      if (!res.ok) throw new Error('server');
-      const data = await res.json();
-      setMsgs(m => [...m, { role: 'assistant', content: data.reply }]);
-    } catch {
-      const reply = localFallback(text);
-      setMsgs(m => [...m, { role: 'assistant', content: reply }]);
+      const mochi = await askMochi(next);
+      setMessages(m => [...m, { role:'assistant', content: mochi.reply + (mochi.followup ? '\n\n' + mochi.followup : '') }]);
+      await handleAction(mochi);
+    } catch (e) {
+      setMessages(m => [...m, { role:'assistant', content: "Mew… I couldn’t reach the cloud. Tap to retry or ask again." }]);
     } finally {
-      setLoading(false);
+      setThinking(false);
     }
   }
 
@@ -105,12 +101,12 @@ export default function CatChatScreen({ navigation }: Props) {
       </View>
 
       <ScrollView ref={scrollRef} style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingBottom: 24 }}>
-        {msgs.filter(m => m.role !== 'system').map((m, i) => (
+        {messages.map((m, i) => (
           <View key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', backgroundColor: m.role === 'user' ? colors.primaryDark : colors.surface, padding: 12, borderRadius: 14, marginVertical: 6 }}>
             <Text style={[textStyles.body, { color: colors.text }]}>{m.content}</Text>
           </View>
         ))}
-        {loading && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
+        {thinking && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
       </ScrollView>
 
       <View style={{ flexDirection:'row', justifyContent:'center', marginBottom:8 }}>
@@ -125,15 +121,6 @@ export default function CatChatScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
-      {lullaby && (
-        <Pressable
-          onPress={async () => { await stopAndUnload(lullaby); setLullaby(null); }}
-          style={{ alignSelf: 'center', marginBottom: 8, backgroundColor: colors.surface, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 }}
-        >
-          <Text style={[textStyles.body, { color: colors.mutedText }]}>🔈 Lullaby playing — Tap to stop</Text>
-        </Pressable>
-      )}
-
       <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#00000033' }}>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           <TextInput
@@ -143,7 +130,7 @@ export default function CatChatScreen({ navigation }: Props) {
             placeholderTextColor={colors.mutedText}
             style={{ flex: 1, backgroundColor: colors.surface, color: colors.text, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}
           />
-          <Pressable onPress={send} style={{ backgroundColor: colors.primaryDark, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}>
+          <Pressable onPress={onSend} style={{ backgroundColor: colors.primaryDark, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}>
             <Text style={[textStyles.bodyMedium, { color: colors.text }]}>Send</Text>
           </Pressable>
         </View>
@@ -165,18 +152,4 @@ export default function CatChatScreen({ navigation }: Props) {
       </View>
     </View>
   );
-}
-
-function localFallback(user: string) {
-  const s = user.toLowerCase();
-  if (s.includes('panic') || s.includes('anxiety')) {
-    return "That sounds scary. You’re not alone.\nTry this with me:\n• Inhale 4\n• Hold 4\n• Exhale 6 (soft shoulders)\n• Name 3 things you see\nI’m here. 🐾";
-  }
-  if (s.includes('sleep paralysis')) {
-    return "Sleep paralysis feels awful—but it passes.\nGently wiggle toes or tongue, slow exhale.\nRemind yourself: 'My body is safe; this will pass.'";
-  }
-  if (s.includes('migraine')) {
-    return "Lights low, hydrate small sips.\nTry a cool pack on neck, breathe 4–6.\nAvoid screens if you can.\nIf symptoms change suddenly, seek medical care.";
-  }
-  return "I’m listening. Tell me a bit more.\nWhat’s the feeling in your body right now?";
 }
