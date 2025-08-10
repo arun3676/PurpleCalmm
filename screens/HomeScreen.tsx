@@ -8,6 +8,7 @@ import CatAvatar from '../components/CatAvatar';
 import PawButton from '../components/PawButton';
 import PawRow from '../components/PawRow';
 import CatHero from '../components/CatHero';
+import CuddleAura from '../components/CuddleAura';
 import { calcJournalStreak, loadEntries, loadStickers } from '../utils/storage';
 import { selection } from '../utils/haptics';
 import { playLoop, stopAndUnload, resumeAll } from '../utils/audio';
@@ -58,9 +59,12 @@ export default function HomeScreen({ navigation }: Props) {
       </View>
 
       <View style={{ alignItems: 'center', marginBottom: 16 }}>
-        <Pressable onPressIn={onCatPressIn} onPressOut={onCatPressOut} hitSlop={20}>
-          <CatAvatar moodLevel={Math.min(1, streak / 7)} size={140} />
-        </Pressable>
+        <View style={{ width: 180, height: 180, alignItems: 'center', justifyContent: 'center' }}>
+          <CuddleAura active={cuddling} />
+          <Pressable onPressIn={onCatPressIn} onPressOut={onCatPressOut} hitSlop={20}>
+            <CatAvatar moodLevel={Math.min(1, streak / 7)} size={140} />
+          </Pressable>
+        </View>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>
           {cuddling ? 'Purring… 💜💜💜' : `Journal streak: ${streak} day${streak === 1 ? '' : 's'}`}
         </Text>
