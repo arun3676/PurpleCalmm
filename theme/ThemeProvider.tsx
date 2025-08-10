@@ -49,7 +49,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [themeName, vibe, reduceMotion]);
 
   const value = useMemo(
-    () => ({ colors, fontsReady, isDark: true, vibe, reduceMotion, setVibe, setReduceMotion, setThemeName, themeName }),
+    () => ({ colors, fontsReady, isDark: false, vibe, reduceMotion, setVibe, setReduceMotion, setThemeName, themeName }),
     [colors, fontsReady, vibe, reduceMotion, themeName]
   );
 

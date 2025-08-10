@@ -13,17 +13,17 @@ export type AppPalette = {
 };
 
 export const PurpleTheme: AppPalette = {
-  primary: '#6A5ACD',        // Soft Indigo
-  primaryDark: '#5B3FD6',    // Deeper Indigo
-  primaryDarker: '#2E2A5A',  // Night Indigo
-  accent: '#F7B3D0',         // Pink Paws
-  background: '#0B0B14',
-  surface: '#151524',
-  text: '#F6F3FF',
-  mutedText: '#BFB7E6',
-  success: '#4ADE80',
+  primary: '#C5B5FF',        // Lavender
+  primaryDark: '#A28BFF',    // Deeper Lavender
+  primaryDarker: '#7D68E8',  // Indigo accent
+  accent: '#FFC8DD',         // Pink paws
+  background: '#F1E8FF',     // Pastel lavender bg
+  surface: '#FFFFFF',        // White cards
+  text: '#1F2430',           // Dark text
+  mutedText: '#6B6E7A',
+  success: '#48C78E',
   danger: '#F87171',
-  sparkle: '#C4B5FD'
+  sparkle: '#E9DDFF'
 };
 
 export const VNightJazz: AppPalette = {
@@ -34,5 +34,7 @@ export const VNightJazz: AppPalette = {
   accent: '#C084FC',
   background: '#0A0813',
   surface: '#120F20',
+  text: '#F6F3FF',
+  mutedText: '#C9C6F0',
   sparkle: '#A78BFA'
 };
