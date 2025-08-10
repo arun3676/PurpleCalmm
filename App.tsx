@@ -13,6 +13,7 @@ import JournalScreen from './screens/JournalScreen';
 import JournalTrendsScreen from './screens/JournalTrendsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CatChatScreen from './screens/CatChatScreen';
+import { SettingsProvider } from './providers/SettingsProvider';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -47,24 +48,32 @@ function ThemedNavContainer({ children }: { children: React.ReactNode }) {
   );
 }
 
+function RootNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Calm" component={CalmScreen} />
+      <Stack.Screen name="Sleep" component={SleepScreen} />
+      <Stack.Screen name="Migraine" component={MigraineScreen} />
+      <Stack.Screen name="Journal" component={JournalScreen} />
+      <Stack.Screen name="JournalTrends" component={JournalTrendsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="CatChat" component={CatChatScreen} />
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider>
-          <ThemedNavContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen name="Calm" component={CalmScreen} />
-              <Stack.Screen name="Sleep" component={SleepScreen} />
-              <Stack.Screen name="Migraine" component={MigraineScreen} />
-              <Stack.Screen name="Journal" component={JournalScreen} />
-              <Stack.Screen name="JournalTrends" component={JournalTrendsScreen} />
-              <Stack.Screen name="Settings" component={SettingsScreen} />
-              <Stack.Screen name="CatChat" component={CatChatScreen} />
-            </Stack.Navigator>
-          </ThemedNavContainer>
-        </ThemeProvider>
+        <SettingsProvider onApplyTheme={(t) => { try { if (typeof document !== 'undefined') { document.documentElement.setAttribute('data-theme', t); } } catch {} }}>
+          <ThemeProvider>
+            <ThemedNavContainer>
+              <RootNavigator />
+            </ThemedNavContainer>
+          </ThemeProvider>
+        </SettingsProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -9,24 +9,31 @@ import { scheduleIn } from '../utils/notifications';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
 import NowPlayingBar from '../components/NowPlayingBar';
+import { useSettings } from '../providers/SettingsProvider';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
 
 export default function MigraineScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
+  const { settings, setMigraineMinutes } = useSettings();
   const [meow, setMeow] = useState<any | null>(null);
-  const [timer, setTimer] = useState<15 | 30 | 45>(15);
+  const [mins, setMins] = React.useState<number>(settings.migraineMinutes);
   const [hydration, setHydration] = useState(false);
   const [resetRunning, setResetRunning] = useState(false);
   const [resetStep, setResetStep] = useState(0);
+
+  useEffect(() => { setMins(settings.migraineMinutes); }, [settings.migraineMinutes]);
 
   useEffect(() => {
     (async () => { try { if (Platform.OS !== 'web') await Brightness.setSystemBrightnessAsync(0.02); } catch {} })();
     return () => { stopAndUnload(meow); };
   }, [meow]);
 
+  function clamp(n:number){ return Math.max(1, Math.min(120, Math.floor(n))); }
+  function commit(n:number){ const v = clamp(n); setMins(v); setMigraineMinutes(v); try { alert('Saved: ' + v + ' min'); } catch {} }
+
   async function startTimer() {
-    if (hydration) await scheduleIn(timer, 'Hydration reminder', 'Sip water to support recovery');
+    if (hydration) await scheduleIn(mins, 'Hydration reminder', 'Sip water to support recovery');
   }
 
   async function quickNote() {
@@ -84,13 +91,38 @@ export default function MigraineScreen({ navigation }: Props) {
         </View>
       </View>
 
+      <View style={{ marginTop: 16 }}>
+        <Text style={[textStyles.h2, { color: colors.text }]}>Timer</Text>
+        <View style={{ flexDirection:'row', gap:10, marginTop:8, flexWrap:'wrap' as const }}>
+          {[1,5,10,15,30,45].map(v => (
+            <Pressable key={v} onPress={() => commit(v)} style={{ backgroundColor: v===mins? colors.primary: colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>{v}m</Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={{ flexDirection:'row', alignItems:'center', gap:12, marginTop:12 }}>
+          <Pressable onPress={() => setMins(m => clamp(m-1))} onLongPress={() => setMins(m => clamp(m-5))}
+            style={{ backgroundColor: colors.surface, paddingVertical:8, paddingHorizontal:14, borderRadius:12 }}>
+            <Text style={[textStyles.body, { color: colors.text }]}>−1</Text>
+          </Pressable>
+          <Text style={[textStyles.h2, { color: colors.text }]}>{mins} min</Text>
+          <Pressable onPress={() => setMins(m => clamp(m+1))} onLongPress={() => setMins(m => clamp(m+5))}
+            style={{ backgroundColor: colors.surface, paddingVertical:8, paddingHorizontal:14, borderRadius:12 }}>
+            <Text style={[textStyles.body, { color: colors.text }]}>+1</Text>
+          </Pressable>
+          <Pressable onPress={() => commit(mins)} style={{ marginLeft: 'auto', backgroundColor: colors.primary, paddingVertical:8, paddingHorizontal:14, borderRadius:12 }}>
+            <Text style={[textStyles.body, { color: colors.text }]}>Save</Text>
+          </Pressable>
+        </View>
+      </View>
+
       <View style={{ marginTop: 24, backgroundColor: colors.surface, borderRadius: 12, padding: 12 }}>
         <Text style={[textStyles.h2, { color: colors.text }]}>Quick Tips</Text>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 6 }]}> 
-          • Dim screen and reduce noise.{"\n"}
-          • Small sips of water (enable reminder below).{"\n"}
-          • Cool pack on neck or warm hands.{"\n"}
-          • 4 in / 6 out breathing for 1 min.{"\n"}
+          • Dim screen and reduce noise{"\n"}
+          • Small sips of water (enable reminder below){"\n"}
+          • Cool pack on neck or warm hands{"\n"}
+          • 4 in / 6 out breathing for 1 min{"\n"}
           • Sudden new or severe symptoms → seek medical care.
         </Text>
         <Pressable onPress={beginReset} style={{ alignSelf: 'flex-start', marginTop: 10 }}>
@@ -103,14 +135,6 @@ export default function MigraineScreen({ navigation }: Props) {
         )}
       </View>
 
-      <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={[textStyles.h2, { color: colors.text }]}>Timer: </Text>
-        {[15, 30, 45].map(v => (
-          <Pressable key={v} onPress={() => setTimer(v as 15 | 30 | 45)} style={{ marginHorizontal: 8 }}>
-            <Text style={[textStyles.body, { color: v === timer ? colors.accent : colors.mutedText }]}>{v}m</Text>
-          </Pressable>
-        ))}
-      </View>
       <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center' }}>
         <Switch value={hydration} onValueChange={setHydration} />
         <Text style={[textStyles.body, { color: colors.mutedText, marginLeft: 8 }]}>Hydration reminder</Text>
@@ -120,7 +144,6 @@ export default function MigraineScreen({ navigation }: Props) {
         <PawButton label="Quick Note" onPress={quickNote} />
       </View>
 
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.primaryDarker, opacity: 0.0, pointerEvents: 'none' }} />
       <NowPlayingBar visible={!!meow} />
     </View>
   );

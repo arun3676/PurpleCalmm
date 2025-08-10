@@ -64,7 +64,7 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={{ alignItems: 'center', marginBottom: 16 }}>
         <View style={{ width: 180, height: 180, alignItems: 'center', justifyContent: 'center' }}>
           <CuddleAura active={cuddling} />
-          <Pressable onPressIn={onCatPressIn} onPressOut={onCatPressOut} hitSlop={20}>
+          <Pressable onPressIn={() => { resumeAll(); onCatPressIn(); }} onPressOut={onCatPressOut} hitSlop={20}>
             <Animated.View style={{ transform: [{ scale: hugScale }] }}>
               <CatAvatar moodLevel={Math.min(1, streak / 7)} size={140} />
             </Animated.View>

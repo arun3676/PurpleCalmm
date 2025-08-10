@@ -18,8 +18,18 @@ export type Settings = {
   comfortPack?: { quotes?: string[]; images?: string[] };
 };
 
+// New app-wide settings (number-safe)
+export type AppSettings = {
+  theme: 'purple' | 'lilac' | 'dark';
+  reduceMotion: boolean;
+  migraineMinutes: number; // ALWAYS a number
+  _v?: number;
+};
+
 const KEYS = { entries: 'pc_entries', settings: 'pc_settings', stickers: 'pc_stickers' };
 const hasLS = typeof window !== 'undefined' && !!window.localStorage;
+
+const SETTINGS_KEY = 'purr.settings.v1';
 
 // Safe getters/setters (AsyncStorage → fallback to localStorage → in-memory)
 async function getItem(key: string): Promise<string | null> {
@@ -62,16 +72,42 @@ export async function clearJournal() {
   return next;
 }
 
-export async function loadSettings(): Promise<Settings | null> {
-  const raw = await getItem(KEYS.settings);
-  try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+// New settings helpers (number-safe)
+export async function loadSettings(): Promise<AppSettings> {
+  try {
+    const raw = await getItem(SETTINGS_KEY);
+    if (!raw) return { theme: 'purple', reduceMotion: false, migraineMinutes: 15, _v: 1 };
+    const s = JSON.parse(raw);
+    const minutes = Math.max(1, Math.min(120, parseInt(String(s.migraineMinutes ?? 15), 10) || 15));
+    const theme = (['purple','lilac','dark'].includes(s.theme) ? s.theme : 'purple') as AppSettings['theme'];
+    return { theme, reduceMotion: !!s.reduceMotion, migraineMinutes: minutes, _v: 1 };
+  } catch {
+    return { theme: 'purple', reduceMotion: false, migraineMinutes: 15, _v: 1 };
+  }
 }
 
-export async function saveSettings(s: Settings) {
-  const prev = (await loadSettings()) || {};
-  const merged = { ...prev, ...s };
-  await setItem(KEYS.settings, JSON.stringify(merged));
+export async function saveSettings(next: Partial<AppSettings>) {
+  const cur = await loadSettings();
+  const merged: AppSettings = {
+    ...cur,
+    ...next,
+    migraineMinutes: Math.max(1, Math.min(120, parseInt(String((next as any).migraineMinutes ?? cur.migraineMinutes), 10) || cur.migraineMinutes)),
+  };
+  await setItem(SETTINGS_KEY, JSON.stringify(merged));
+  return merged;
 }
+
+export async function loadStickers(): Promise<Sticker[]> {
+  const raw = await getItem(KEYS.stickers);
+  try { return raw ? JSON.parse(raw) : []; } catch { return []; }
+}
+export async function saveSticker(s: Sticker) {
+  const all = await loadStickers();
+  all.unshift(s);
+  await setItem(KEYS.stickers, JSON.stringify(all));
+}
+
+export type Sticker = { id: string; name: string; emoji: string; ts: number };
 
 export function calcJournalStreak(entries: Entry[]): number {
   const days = new Set(entries.filter(e => e.type === 'journal').map(e => new Date(e.ts).toDateString()));
@@ -81,16 +117,4 @@ export function calcJournalStreak(entries: Entry[]): number {
     if (days.has(d.toDateString())) streak++; else break;
   }
   return streak;
-}
-
-// ---- Stickers ----
-export type Sticker = { id: string; name: string; emoji: string; ts: number };
-export async function loadStickers(): Promise<Sticker[]> {
-  const raw = await getItem(KEYS.stickers);
-  try { return raw ? JSON.parse(raw) : []; } catch { return []; }
-}
-export async function saveSticker(s: Sticker) {
-  const all = await loadStickers();
-  all.unshift(s);
-  await setItem(KEYS.stickers, JSON.stringify(all));
 }
