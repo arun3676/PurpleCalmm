@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Animated } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import Svg, { Path } from 'react-native-svg';
+import { saveSticker } from '../utils/storage';
 
 const PHASE = 4000; // 4s each
 type Phase = 'inhale'|'hold'|'exhale';
@@ -12,6 +13,7 @@ export default function CalmScreen({ navigation }: any) {
   const [sec, setSec] = useState(4);
   const [cycleInSet, setCycleInSet] = useState(1);
   const [celebrate, setCelebrate] = useState(false);
+  const [earned, setEarned] = useState<string | null>(null);
   const scale = useRef(new Animated.Value(1)).current;
   const stopRef = useRef(false);
 
@@ -31,7 +33,13 @@ export default function CalmScreen({ navigation }: any) {
     Animated.timing(scale, { toValue: p==='inhale'?1.18:p==='exhale'?0.85:1, duration: PHASE, useNativeDriver: true }).start();
     for (let t = PHASE; t >= 0 && !stopRef.current; t -= 250) { setSec(Math.max(0, Math.ceil(t/1000))); await sleep(250); }
   }
-  function celebrateOnce() { setCelebrate(true); setTimeout(() => setCelebrate(false), 1100); }
+  function celebrateOnce() {
+    setCelebrate(true);
+    const s = { id: `${Date.now()}`, name: 'Calm Set', emoji: '🐱', ts: Date.now() };
+    saveSticker(s).catch(() => {});
+    setEarned('🐱 Calm Set');
+    setTimeout(() => { setCelebrate(false); setEarned(null); }, 1600);
+  }
 
   const label = phase==='inhale'?'Inhale':phase==='hold'?'Hold':'Exhale';
 
@@ -70,6 +78,11 @@ export default function CalmScreen({ navigation }: any) {
           </Animated.View>
         </View>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop:10 }]}>Cycle {cycleInSet}/4</Text>
+        {earned && (
+          <View style={{ marginTop: 8, backgroundColor: colors.surface, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10 }}>
+            <Text style={[textStyles.body, { color: colors.text }]}>Sticker earned: {earned}</Text>
+          </View>
+        )}
       </View>
 
       {celebrate && (

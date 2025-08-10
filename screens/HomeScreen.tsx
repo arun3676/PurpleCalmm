@@ -6,10 +6,9 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import Card from '../components/Card';
 import CatAvatar from '../components/CatAvatar';
 import PawButton from '../components/PawButton';
-import { calcJournalStreak, loadEntries, loadStickers, saveSticker } from '../utils/storage';
+import { calcJournalStreak, loadEntries, loadStickers } from '../utils/storage';
 import { soft, selection } from '../utils/haptics';
-import { playLoop, stopAndUnload, resumeAll, playSong, stopAllSongs } from '../utils/audio';
-import { speakMochi } from '../utils/voice';
+import { playLoop, stopAndUnload, resumeAll } from '../utils/audio';
 import type { Sound } from 'expo-av';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -42,15 +41,6 @@ export default function HomeScreen({ navigation }: Props) {
     await stopAndUnload(purr);
   }
 
-  async function awardFirstSticker() {
-    if (stickers.length === 0) {
-      const s = { id: `${Date.now()}`, name: 'First Purr', emoji: '🐾', ts: Date.now() };
-      await saveSticker(s);
-      setStickers([s, ...stickers]);
-      await soft();
-    }
-  }
-
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -73,21 +63,11 @@ export default function HomeScreen({ navigation }: Props) {
         {!cuddling && <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 2 }]}>Tap & hold the cat to cuddle</Text>}
       </View>
 
-      {/* Playful Cat Actions */}
-      <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 12, marginBottom: 12 }}>
-        <Text style={[textStyles.h2, { color: colors.text }]}>Mochi’s Quick Actions</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' as const, gap: 12, marginTop: 8 }}>
-          <PawButton label="Purr" onPress={async () => { await resumeAll(); await stopAndUnload(purr); const s = await playLoop('softpurr', 0.3); setPurr(s); await awardFirstSticker(); }} />
-          <PawButton label="Meow" onPress={async () => { await stopAllSongs(); await playSong('sadmeow', 0.7, false); await awardFirstSticker(); }} />
-          <PawButton label="Ground me" onPress={async () => { await speakMochi('Let’s breathe together. Inhale four, hold four, exhale four. You are safe.'); await awardFirstSticker(); }} />
-        </View>
-      </View>
-
       {/* Paw Stickers Drawer */}
       <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 12, marginBottom: 12 }}>
         <Text style={[textStyles.h2, { color: colors.text }]}>Paw Stickers</Text>
         {stickers.length === 0 ? (
-          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 6 }]}>Do a quick action to earn your first sticker!</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 6 }]}>Complete a Calm breathing set to earn your first sticker!</Text>
         ) : (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' as const, gap: 8, marginTop: 8 }}>
             {stickers.slice(0, 12).map(s => (
