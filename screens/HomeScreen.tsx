@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, ScrollView, Pressable, Platform, Animated } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
@@ -22,6 +22,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [cuddling, setCuddling] = useState(false);
   const [purr, setPurr] = useState<Sound | any | null>(null);
   const [stickers, setStickers] = useState<{ id: string; name: string; emoji: string; ts: number }[]>([]);
+  const hugScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     (async () => {
@@ -34,6 +35,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   async function onCatPressIn() {
     setCuddling(true);
+    Animated.spring(hugScale, { toValue: 1.08, useNativeDriver: true, friction: 6, tension: 120 }).start();
     selection();
     await resumeAll();
     const s = await playLoop('softpurr', 0.28);
@@ -41,6 +43,7 @@ export default function HomeScreen({ navigation }: Props) {
   }
   async function onCatPressOut() {
     setCuddling(false);
+    Animated.spring(hugScale, { toValue: 1, useNativeDriver: true, friction: 6, tension: 120 }).start();
     await stopAndUnload(purr);
   }
 
@@ -62,7 +65,9 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={{ width: 180, height: 180, alignItems: 'center', justifyContent: 'center' }}>
           <CuddleAura active={cuddling} />
           <Pressable onPressIn={onCatPressIn} onPressOut={onCatPressOut} hitSlop={20}>
-            <CatAvatar moodLevel={Math.min(1, streak / 7)} size={140} />
+            <Animated.View style={{ transform: [{ scale: hugScale }] }}>
+              <CatAvatar moodLevel={Math.min(1, streak / 7)} size={140} />
+            </Animated.View>
           </Pressable>
         </View>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>
