@@ -35,15 +35,16 @@ export default function HomeScreen({ navigation }: Props) {
 
   async function onCatPressIn() {
     setCuddling(true);
-    Animated.spring(hugScale, { toValue: 1.08, useNativeDriver: true, friction: 6, tension: 120 }).start();
+    // Resume web audio immediately in the user gesture
+    try { resumeAll(); } catch {}
+    Animated.spring(hugScale, { toValue: 1.08, useNativeDriver: false, friction: 6, tension: 120 }).start();
     selection();
-    await resumeAll();
     const s = await playLoop('softpurr', 0.28);
     setPurr(s);
   }
   async function onCatPressOut() {
     setCuddling(false);
-    Animated.spring(hugScale, { toValue: 1, useNativeDriver: true, friction: 6, tension: 120 }).start();
+    Animated.spring(hugScale, { toValue: 1, useNativeDriver: false, friction: 6, tension: 120 }).start();
     await stopAndUnload(purr);
   }
 
