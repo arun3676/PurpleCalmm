@@ -25,7 +25,7 @@ function Chip({ onPress, active, label, style }: any){
 }
 
 export default function SettingsScreen({ navigation }: Props){
-  const { colors } = useAppTheme();
+  const { colors, darkMode, setDarkMode } = useAppTheme();
   const {
     theme, setTheme,
     reduceMotion, setReduceMotion,
@@ -76,47 +76,22 @@ export default function SettingsScreen({ navigation }: Props){
           onPress={() => setReduceMotion(!reduceMotion)} />
       </View>
 
-      <Text style={{ fontSize:18, fontWeight:'700', marginTop:20, color: colors.text }}>Default Durations</Text>
-      <Text style={{ opacity:0.7, marginTop:4, color: colors.mutedText }}>Migraine Timer (min)</Text>
-
-      <View style={{ flexDirection:'row', flexWrap:'wrap', marginTop:8 }}>
-        {[1,5,10,15,30,45].map(v => (
-          <Chip key={v} label={`${v}m`} active={mins===v} onPress={()=> setMins(v)} />
-        ))}
+      <View style={{ flexDirection:'row', alignItems:'center', marginTop:8 }}>
+        <Chip label={`Reduce Motion: ${reduceMotion ? 'ON' : 'OFF'}`}
+          active={reduceMotion}
+          onPress={() => setReduceMotion(!reduceMotion)} />
+        <Chip label={`Night Mode: ${darkMode ? 'ON' : 'OFF'}`}
+          active={darkMode}
+          onPress={() => setDarkMode(!darkMode)} />
       </View>
 
-      <View style={{ flexDirection:'row', alignItems:'center', marginTop:10 }}>
-        <Chip label="−1" onPress={()=> setMins(m=> Math.max(1, m-1))} />
-        <Text style={{ fontSize:18, fontWeight:'700', marginHorizontal:10, color: colors.text }}>{mins} min</Text>
-        <Chip label="+1" onPress={()=> setMins(m=> Math.min(120, m+1))} />
-        <Chip label="Save" active onPress={()=> saveMinutes(mins)} style={{ marginLeft:'auto' }} />
-      </View>
-
-      <Text style={{ fontSize:18, fontWeight:'700', marginTop:24, color: colors.text }}>Audio</Text>
-      <Text style={{ opacity:0.7, marginTop:4, color: colors.mutedText }}>Good-night voice</Text>
-      <View style={{ flexDirection:'row', flexWrap:'wrap', marginTop:8 }}>
-        <Chip label="Korean (cute)"  active={voice==='ko'} onPress={()=> setVoice('ko')} />
-        <Chip label="English (soft)" active={voice==='en'} onPress={()=> setVoice('en')} />
-        <Chip label="Test" active onPress={testGoodnight} />
-      </View>
-
-      <Text style={{ opacity:0.7, marginTop:12, color: colors.mutedText }}>Master volume</Text>
+      <Text style={{ fontSize:18, fontWeight:'700', marginTop:24, color: colors.text }}>Volume</Text>
       <View style={{ flexDirection:'row', alignItems:'center', gap:10, marginTop:6 }}>
         <Chip label="−" onPress={()=> setMasterVolume(Math.max(0, +(masterVolume-0.05).toFixed(2)))} />
         <Text style={{ width:70, textAlign:'center', color: colors.text }}>{Math.round(masterVolume*100)}%</Text>
         <Chip label="+" onPress={()=> setMasterVolume(Math.min(1, +(masterVolume+0.05).toFixed(2)))} />
       </View>
 
-      <Text style={{ fontSize:18, fontWeight:'700', marginTop:24, color: colors.text }}>Data</Text>
-      <View style={{ flexDirection:'row', flexWrap:'wrap', marginTop:8 }}>
-        <Chip label="Export JSON" active onPress={()=> {/* keep your existing export logic */} } />
-        <Chip label="Clear All" onPress={()=>{
-          try {
-            localStorage.clear();
-            showToast('All data cleared');
-          } catch { showToast('Could not clear'); }
-        }} />
-      </View>
 
       {toast && (
         <View style={{

@@ -4,6 +4,7 @@ import { useFonts as usePoppins, Poppins_700_Bold } from '@expo-google-fonts/pop
 import { useFonts as useInter, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { PurpleTheme, VNightJazz, AppPalette } from './theme';
 import { loadSettings, saveSettings, Settings } from '../utils/storage';
+import { THEME_TOKENS, ThemeKey } from './tokens';
 
 type ThemeContextValue = {
   colors: AppPalette;
@@ -13,18 +14,35 @@ type ThemeContextValue = {
   reduceMotion: boolean;
   setVibe: (v: boolean) => void;
   setReduceMotion: (v: boolean) => void;
-  setThemeName: (n: 'purple' | 'vjazz') => void;
-  themeName: 'purple' | 'vjazz';
+  setThemeName: (n: ThemeKey) => void;
+  themeName: ThemeKey;
+  darkMode: boolean;
+  setDarkMode: (b: boolean) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeName, setThemeName] = useState<'purple' | 'vjazz'>('purple');
+  const [themeName, setThemeName] = useState<ThemeKey>('purple');
   const [vibe, setVibe] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
-  const colors = useMemo<AppPalette>(() => PurpleTheme, [themeName, vibe]);
+  const colors = useMemo<AppPalette>(() => {
+    // Continue providing AppPalette for existing components; background/surface/text map to tokens
+    const t = THEME_TOKENS[themeName] || THEME_TOKENS.purple;
+    if (darkMode) {
+      return VNightJazz;
+    }
+    return {
+      ...PurpleTheme,
+      background: t.bg,
+      surface: t.surface,
+      text: t.text,
+      mutedText: t.mutedText,
+      primary: t.primary,
+    } as AppPalette;
+  }, [themeName, vibe, darkMode]);
 
   const [manropeLoaded] = useManrope({ Manrope_600_SemiBold, Manrope_700_Bold });
   const [poppinsLoaded] = usePoppins({ Poppins_700_Bold });
@@ -35,11 +53,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       const s = await loadSettings();
-      // Force the new light Lavender theme regardless of previous dark settings
       setVibe(false);
       setReduceMotion(Boolean(s?.reduceMotion));
-      setThemeName('purple');
-      const normalized: Settings = { themeName: 'purple', vibe: false, reduceMotion: Boolean(s?.reduceMotion) };
+      const tn: ThemeKey = (s as any)?.themeName === 'vjazz' ? 'vjazz' : 'purple';
+      setThemeName(tn);
+      const normalized: Settings = { themeName: tn, vibe: false, reduceMotion: Boolean(s?.reduceMotion) };
       await saveSettings(normalized);
     })();
   }, []);
@@ -50,8 +68,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [themeName, vibe, reduceMotion]);
 
   const value = useMemo(
-    () => ({ colors, fontsReady, isDark: false, vibe, reduceMotion, setVibe, setReduceMotion, setThemeName, themeName }),
-    [colors, fontsReady, vibe, reduceMotion, themeName]
+    () => ({ colors, fontsReady, isDark: darkMode, vibe, reduceMotion, setVibe, setReduceMotion, setThemeName, themeName, darkMode, setDarkMode }),
+    [colors, fontsReady, vibe, reduceMotion, themeName, darkMode]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
