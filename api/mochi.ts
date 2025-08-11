@@ -5,15 +5,38 @@ type Msg = { role: Role; content: string };
 
 const SYSTEM = `
 You are Mochi the Cat — gentle, practical, brief.
-1 line of empathy, then 2–4 specific steps. Light cat-isms ("mew", "purr").
-Crisis language → encourage urgent help kindly.
+Use the provided USER MEMORY notes to personalize responses (preferences, triggers, comforts, boundaries).
+Style: 1 line of empathy, then 2–4 specific steps. Light cat-isms ("mew", "purr").
 If asked to sing, set action PLAY_SOFT_KITTY (no lyrics).
+Crisis language → encourage urgent help kindly.
+
 Actions: PLAY_SOFT_KITTY | START_BREATHING | START_MIGRAINE_TIMER | START_SLEEP | SAVE_JOURNAL | NONE
+
 Return STRICT JSON ONLY:
-{"reply":"","followup":null,"action":"PLAY_SOFT_KITTY","minutes":null,"journal":null}
+{
+ "reply": "",
+ "followup": null,
+ "action": "NONE",
+ "minutes": null,
+ "journal": null,
+ "memoryAdd": [],
+ "memoryForget": []
+}
 `;
 
 function safeJSON(s: string) { try { return JSON.parse(s); } catch { return null; } }
+function cleanArray(a: any, limit = 5) {
+  const out: string[] = [];
+  if (!Array.isArray(a)) return out;
+  for (const s of a) {
+    if (typeof s !== 'string') continue;
+    const t = s.trim().slice(0, 80);
+    if (t) out.push(t);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 function sanitize(o: any) {
   const A = new Set(['PLAY_SOFT_KITTY','START_BREATHING','START_MIGRAINE_TIMER','START_SLEEP','SAVE_JOURNAL','NONE']);
   return {
@@ -22,6 +45,8 @@ function sanitize(o: any) {
     action: A.has(String(o?.action)) ? String(o.action) : 'NONE',
     minutes: Number.isFinite(Number(o?.minutes)) ? Math.max(1, Math.min(120, Math.floor(Number(o.minutes)))) : null,
     journal: o?.journal ? String(o.journal).slice(0, 300) : null,
+    memoryAdd: cleanArray(o?.memoryAdd, 5),
+    memoryForget: cleanArray(o?.memoryForget, 5),
   };
 }
 
@@ -40,9 +65,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!key) return res.status(200).setHeader('x-mochi','no-key-fallback').json(FALLBACK);
 
   let messages: Msg[] = [];
+  let memories: string[] = [];
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     messages = Array.isArray(body?.messages) ? (body.messages as Msg[]).slice(-12) : [];
+    memories = Array.isArray(body?.memories) ? (body.memories as string[]).slice(0, 30) : [];
   } catch {
     return res.status(400).json({ error: 'Bad JSON' });
   }
@@ -52,6 +79,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const timer = setTimeout(() => ctrl.abort(), 20_000); // 20s hard timeout
 
   try {
+    const sysMemoryNote = memories.length
+      ? { role: 'system', content: 'USER MEMORY:\n- ' + memories.join('\n- ') }
+      : null;
+
+    const openAiMessages = [
+      { role: 'system', content: SYSTEM },
+      ...(sysMemoryNote ? [sysMemoryNote] : []),
+      ...messages,
+      { role: 'user', content: 'Reply ONLY with the strict JSON object described above.' },
+    ];
+
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -61,11 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         temperature: 0.7,
-        messages: [
-          { role: 'system', content: SYSTEM },
-          ...messages,
-          { role: 'user', content: 'Reply ONLY with the strict JSON object described above.' },
-        ],
+        messages: openAiMessages,
       }),
       signal: ctrl.signal,
     });

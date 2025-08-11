@@ -5,7 +5,8 @@ import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { saveEntry } from '../utils/storage';
 import { stopAndUnload, playMochiLullaby, playSong, stopAllSongs } from '../utils/audio';
-import { askMochi, ChatMsg } from '../utils/mochiClient';
+import { askMochi, ChatMsg, loadChat, saveChat } from '../utils/mochiClient';
+import { memoryStrings, addMemories, forgetMemories } from '../utils/memory';
 import { useNavigation } from '@react-navigation/native';
 import { useSettings } from '../providers/SettingsProvider';
 
@@ -15,9 +16,12 @@ export default function CatChatScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
   const nav = useNavigation<any>();
   const { setMigraineMinutes } = useSettings();
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { role:'assistant', content: "Mew! I’m Mochi. Tell me what’s up, I’m listening. 💜" }
-  ]);
+  const GREETING: ChatMsg = { role:'assistant', content: "Mew! I’m Mochi. Tell me what’s up, I’m listening. 💜" };
+  const [messages, setMessages] = useState<ChatMsg[]>(() => {
+    const prev = loadChat();
+    return prev.length ? prev : [GREETING];
+  });
+  useEffect(() => { saveChat(messages); }, [messages]);
   const [input, setInput] = useState('');
   const [note, setNote] = useState('');
   const [thinking, setThinking] = useState(false);
@@ -60,18 +64,16 @@ export default function CatChatScreen({ navigation }: Props) {
   }
 
   async function onSend() {
-    const text = input.trim();
-    if (!text || thinking) return;
+    const text = input.trim(); if (!text || thinking) return;
     setInput('');
-    const next = [...messages, { role:'user', content: text }];
+    const next = [...messages, { role:'user', content:text }];
     setMessages(next);
     setThinking(true);
     try {
-      const mochi = await askMochi(next);
-      setMessages(m => [...m, {
-        role:'assistant',
-        content: mochi.reply + (mochi.followup ? '\n\n' + mochi.followup : '')
-      }]);
+      const mochi = await askMochi(next.slice(-12), memoryStrings());
+      setMessages(m => [...m, { role:'assistant', content: mochi.reply + (mochi.followup ? '\n\n' + mochi.followup : '') }]);
+      if (mochi.memoryAdd?.length) addMemories(mochi.memoryAdd);
+      if (mochi.memoryForget?.length) forgetMemories(mochi.memoryForget);
       if (typeof handleAction === 'function') { await handleAction(mochi); }
     } catch (e) {
       setMessages(m => [...m, { role:'assistant', content: "Mew… I couldn’t reach the cloud. Tap to retry." }]);
