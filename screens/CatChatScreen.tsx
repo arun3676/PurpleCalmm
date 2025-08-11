@@ -31,8 +31,7 @@ export default function CatChatScreen({ navigation }: Props) {
   async function handleAction(a: any) {
     switch (a?.action) {
       case 'PLAY_SOFT_KITTY': {
-        if (softKitty) { await stopAndUnload(softKitty); setSoftKitty(null); }
-        else { const s = await playSong('softkitty', 0.8, false); setSoftKitty(s); }
+        // No auto-play; user can tap the Soft Kitty button below
         break;
       }
       case 'START_BREATHING':
