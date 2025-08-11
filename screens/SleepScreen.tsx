@@ -5,7 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useKeepAwake } from 'expo-keep-awake';
 import { playLoop, stopAndUnload, playSong, resumeAll, stopAllSongs } from '../utils/audio';
-import { ensureUnlocked, playOnce } from '../utils/sfx';
+import { unlockAudio, playGoodnight } from '../utils/sfx';
 import { useSettings } from '../providers/SettingsProvider';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
@@ -44,7 +44,7 @@ export default function SleepScreen({ navigation }: Props) {
 
   async function onPressIn() {
     setHolding(true);
-    await ensureUnlocked();
+    await unlockAudio();
     try {
       await resumeAll();
       const a = await playLoop?.('softpurr', 0.35);
@@ -56,9 +56,8 @@ export default function SleepScreen({ navigation }: Props) {
     setHolding(false);
     await stopAndUnload(anchor);
     await stopAllSongs();
-    const key = voice === 'en' ? 'goodnight_en' : 'goodnight_ko';
     try {
-      await playOnce(key as any, masterVolume ?? 0.8);
+      await playGoodnight(voice as any, masterVolume ?? 0.8);
     } catch {}
   }
 
