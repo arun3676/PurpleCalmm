@@ -55,17 +55,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const s = await loadSettings();
       setVibe(false);
       setReduceMotion(Boolean(s?.reduceMotion));
-      const tn: ThemeKey = (s as any)?.themeName === 'vjazz' ? 'vjazz' : 'purple';
+      const tn: ThemeKey = (s as any)?.theme === 'vjazz' ? 'vjazz' : 'purple';
       setThemeName(tn);
-      const normalized: Settings = { themeName: tn, vibe: false, reduceMotion: Boolean(s?.reduceMotion) };
-      await saveSettings(normalized);
+      // Persist back the canonical theme key used by storage
+      await saveSettings({ theme: tn } as any);
     })();
   }, []);
 
   useEffect(() => {
-    const s: Settings = { themeName, vibe, reduceMotion };
-    saveSettings(s);
-  }, [themeName, vibe, reduceMotion]);
+    // Persist theme and reduceMotion through unified storage keys
+    saveSettings({ theme: themeName as any, reduceMotion } as any);
+  }, [themeName, reduceMotion]);
 
   const value = useMemo(
     () => ({ colors, fontsReady, isDark: darkMode, vibe, reduceMotion, setVibe, setReduceMotion, setThemeName, themeName, darkMode, setDarkMode }),

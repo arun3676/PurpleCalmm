@@ -20,7 +20,7 @@ export type Settings = {
 
 // New app-wide settings (number-safe)
 export type AppSettings = {
-  theme: 'purple' | 'lilac' | 'dark';
+  theme: 'purple' | 'vjazz' | 'lilac' | 'dark';
   reduceMotion: boolean;
   migraineMinutes: number; // ALWAYS a number
   _v?: number;
@@ -79,7 +79,8 @@ export async function loadSettings(): Promise<AppSettings> {
     if (!raw) return { theme: 'purple', reduceMotion: false, migraineMinutes: 15, _v: 1 };
     const s = JSON.parse(raw);
     const minutes = Math.max(1, Math.min(120, parseInt(String(s.migraineMinutes ?? 15), 10) || 15));
-    const theme = (['purple','lilac','dark'].includes(s.theme) ? s.theme : 'purple') as AppSettings['theme'];
+    const allowed = new Set(['purple','vjazz','lilac','dark']);
+    const theme = (allowed.has(s.theme) ? s.theme : 'purple') as AppSettings['theme'];
     return { theme, reduceMotion: !!s.reduceMotion, migraineMinutes: minutes, _v: 1 };
   } catch {
     return { theme: 'purple', reduceMotion: false, migraineMinutes: 15, _v: 1 };

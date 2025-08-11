@@ -29,30 +29,11 @@ export default function SettingsScreen({ navigation }: Props){
   const {
     theme, setTheme,
     reduceMotion, setReduceMotion,
-    migraineDefaultMinutes, setMigraineDefaultMinutes,
-    voice, setVoice,
     masterVolume, setMasterVolume
   } = useSettings();
 
-  const [mins, setMins] = React.useState<number>(migraineDefaultMinutes || 10);
   const [toast, setToast] = React.useState<string | null>(null);
   function showToast(msg:string){ setToast(msg); setTimeout(()=>setToast(null), 1200); }
-
-  async function saveMinutes(n:number){
-    const v = Math.max(1, Math.min(120, Math.floor(n)));
-    await setMigraineDefaultMinutes(v);
-    setMins(v);
-    showToast(`Default migraine timer: ${v} min`);
-  }
-
-  async function testGoodnight(){
-    try {
-      const h = await playSong('goodnight_' + voice, masterVolume, false);
-      setTimeout(()=> { try{ stopAndUnload(h); }catch{} }, 1200);
-    } catch {
-      showToast('Audio ready on next tap');
-    }
-  }
 
   return (
     <ScrollView contentContainerStyle={{ padding:16, paddingBottom:40 }}>
@@ -70,13 +51,7 @@ export default function SettingsScreen({ navigation }: Props){
       </View>
 
       <Text style={{ fontSize:18, fontWeight:'700', marginTop:20, color: colors.text }}>Comfort</Text>
-      <View style={{ flexDirection:'row', alignItems:'center', marginTop:8 }}>
-        <Chip label={`Reduce Motion: ${reduceMotion ? 'ON' : 'OFF'}`}
-          active={reduceMotion}
-          onPress={() => setReduceMotion(!reduceMotion)} />
-      </View>
-
-      <View style={{ flexDirection:'row', alignItems:'center', marginTop:8 }}>
+      <View style={{ flexDirection:'row', alignItems:'center', flexWrap:'wrap', marginTop:8 }}>
         <Chip label={`Reduce Motion: ${reduceMotion ? 'ON' : 'OFF'}`}
           active={reduceMotion}
           onPress={() => setReduceMotion(!reduceMotion)} />
