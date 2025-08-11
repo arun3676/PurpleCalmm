@@ -5,6 +5,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useKeepAwake } from 'expo-keep-awake';
 import { playLoop, stopAndUnload, playSong, resumeAll, stopAllSongs } from '../utils/audio';
+import { ensureUnlocked, playOnce } from '../utils/sfx';
+import { useSettings } from '../providers/SettingsProvider';
 import { useSettings } from '../providers/SettingsProvider';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
@@ -13,6 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Sleep'>;
 
 export default function SleepScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
+  const { masterVolume, voice } = useSettings();
   const { voice, masterVolume } = useSettings();
   const [bedside, setBedside] = useState(false);
   const [purr, setPurr] = useState<Sound | any | null>(null);
@@ -43,18 +46,22 @@ export default function SleepScreen({ navigation }: Props) {
 
   async function onPressIn() {
     setHolding(true);
-    await resumeAll();
-    const a = await playLoop?.('softpurr', 0.35); // if generator present
-    setAnchor(a);
+    await ensureUnlocked();
+    try {
+      await resumeAll();
+      const a = await playLoop?.('softpurr', 0.35);
+      setAnchor(a);
+    } catch {}
   }
 
   async function onPressOut() {
     setHolding(false);
     await stopAndUnload(anchor);
     await stopAllSongs();
-    const key = voice === 'ko' ? 'goodnight_ko' : 'goodnight_en';
-    await resumeAll();
-    await playSong(key, masterVolume, false);
+    const key = voice === 'en' ? 'goodnight_en' : 'goodnight_ko';
+    try {
+      await playOnce(key as any, masterVolume ?? 0.8);
+    } catch {}
   }
 
   return (
@@ -65,7 +72,8 @@ export default function SleepScreen({ navigation }: Props) {
 
       <View style={{ alignItems: 'center', marginTop: 24 }}>
         <Text style={[textStyles.h1, { color: colors.text }]}>Sleep</Text>
-        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>Wind-down and bedside mode</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>Wind-down and bedside mode</Text>
+          {holding && <Text style={{ opacity: 0.7, marginTop: 8 }}>…purring…</Text>}
       </View>
 
       <View style={{ marginTop: 24 }}>

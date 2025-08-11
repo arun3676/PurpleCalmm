@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import * as Brightness from 'expo-brightness';
 import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
+import { ensureUnlocked, playOnce, stop as stopSfx } from '../utils/sfx';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
 import NowPlayingBar from '../components/NowPlayingBar';
@@ -18,7 +19,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
 export default function MigraineScreen({ navigation }: Props) {
   const route = useRoute<any>();
   const { colors } = useAppTheme();
-  const { migraineDefaultMinutes, setMigraineDefaultMinutes } = useSettings();
+  const { migraineDefaultMinutes, setMigraineDefaultMinutes, masterVolume } = useSettings();
   const [meow, setMeow] = useState<any | null>(null);
   const [mins, setMins] = React.useState<number>(migraineDefaultMinutes || 10);
   const [resetRunning, setResetRunning] = useState(false);
@@ -136,15 +137,16 @@ export default function MigraineScreen({ navigation }: Props) {
             <PawButton
               label={meow ? '⏸ Mochi Meow' : '▶︎ Mochi Meow'}
               onPress={async () => {
-                await resumeAll();
-                if (meow) {
-                  await stopAndUnload(meow);
-                  setMeow(null);
-                } else {
-                  await stopAllSongs();
-                  const s = await playSong('sadmeow', 0.7, true);
-                  setMeow(s);
-                }
+                try {
+                  await ensureUnlocked();
+                  if (meow) {
+                    await stopAndUnload(meow); setMeow(null); stopSfx('sad_meow' as any);
+                  } else {
+                    await stopAllSongs();
+                    await playOnce('sad_meow' as any, masterVolume ?? 0.6);
+                    // leave setMeow for legacy now playing bar; not strictly needed for sfx
+                  }
+                } catch {}
               }}
             />
           </View>
