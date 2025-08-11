@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useKeepAwake } from 'expo-keep-awake';
 import { playLoop, stopAndUnload, playSong, resumeAll, stopAllSongs } from '../utils/audio';
+import { useSettings } from '../providers/SettingsProvider';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
 
@@ -12,6 +13,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Sleep'>;
 
 export default function SleepScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
+  const { voice, masterVolume } = useSettings();
   const [bedside, setBedside] = useState(false);
   const [purr, setPurr] = useState<Sound | any | null>(null);
   const [anchor, setAnchor] = useState<any | null>(null);
@@ -50,7 +52,9 @@ export default function SleepScreen({ navigation }: Props) {
     setHolding(false);
     await stopAndUnload(anchor);
     await stopAllSongs();
-    await playSong('goodnightko', 0.9, false);
+    const key = voice === 'ko' ? 'goodnight_ko' : 'goodnight_en';
+    await resumeAll();
+    await playSong(key, masterVolume, false);
   }
 
   return (

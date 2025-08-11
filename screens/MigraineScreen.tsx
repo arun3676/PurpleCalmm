@@ -18,9 +18,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
 export default function MigraineScreen({ navigation }: Props) {
   const route = useRoute<any>();
   const { colors } = useAppTheme();
-  const { settings, setMigraineMinutes } = useSettings();
+  const { migraineDefaultMinutes, setMigraineDefaultMinutes } = useSettings();
   const [meow, setMeow] = useState<any | null>(null);
-  const [mins, setMins] = React.useState<number>(settings.migraineMinutes);
+  const [mins, setMins] = React.useState<number>(migraineDefaultMinutes || 10);
   const [resetRunning, setResetRunning] = useState(false);
   const [resetStep, setResetStep] = useState(0);
 
@@ -81,7 +81,7 @@ export default function MigraineScreen({ navigation }: Props) {
 
   React.useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current); }, []);
 
-  useEffect(() => { setMins(settings.migraineMinutes); }, [settings.migraineMinutes]);
+  useEffect(() => { setMins(migraineDefaultMinutes || 10); }, [migraineDefaultMinutes]);
 
   useEffect(() => {
     (async () => { try { if (Platform.OS !== 'web') await Brightness.setSystemBrightnessAsync(0.02); } catch {} })();
@@ -155,7 +155,7 @@ export default function MigraineScreen({ navigation }: Props) {
 
           <View style={{ flexDirection:'row', gap:10, marginTop:8, flexWrap:'wrap' as const }}>
             {[1,5,10,15,30,45].map(v => (
-              <Pressable key={v} onPress={() => { setMins(v); setMigraineMinutes(v); showToast(`Default: ${v} min`); }}
+              <Pressable key={v} onPress={() => { setMins(v); setMigraineDefaultMinutes(v); showToast(`Default: ${v} min`); }}
                 style={{ backgroundColor: v===mins? colors.primary: colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
                 <Text style={[textStyles.body, { color: colors.text }]}>{v}m</Text>
               </Pressable>
