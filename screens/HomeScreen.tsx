@@ -49,7 +49,26 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-      <CatHero />
+      <CatHero src={"/assets/splash_cat.jpeg"} focus={{ xPct: 60, yPct: 64 }} height={260} overlay="rgba(237,230,255,0.45)">
+        <View
+          style={{
+            alignSelf: 'center',
+            backgroundColor: 'rgba(255,255,255,0.65)',
+            borderColor: '#CFC0FF',
+            borderWidth: 1,
+            paddingVertical: 14,
+            paddingHorizontal: 18,
+            borderRadius: 20
+          }}
+        >
+          <Text style={{ fontSize: 28, fontWeight: '800', color: '#190F2A', textAlign: 'center' }}>
+            Purrple Calm
+          </Text>
+          <Text style={{ fontSize: 16, color: '#574A79', textAlign: 'center' }}>
+            Your cozy cat comfort space
+          </Text>
+        </View>
+      </CatHero>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 16 }}>
         <View>
