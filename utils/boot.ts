@@ -1,4 +1,4 @@
-import { preloadImage } from './preload';
+import { preloadSplash } from './preload';
 
 export type BootUpdate = (pct: number, tip?: string) => void;
 
@@ -6,7 +6,7 @@ export async function boot(update: BootUpdate) {
   const steps: Array<{ tip: string; fn: () => Promise<void> }> = [
     { tip: 'Loading settings…', fn: async () => { await wait(180); } },
     { tip: 'Warming up Mochi…', fn: async () => { await fetch('/api/ping').catch(()=>{}); await wait(120); } },
-    { tip: 'Preloading kitty…', fn: async () => { await preloadImage('/assets/splash_cat.jpg'); } },
+    { tip: 'Preloading kitty…', fn: async () => { await preloadSplash(); } },
   ];
   let i = 0;
   for (const s of steps) {

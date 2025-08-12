@@ -1,11 +1,8 @@
-export async function preloadImage(url: string) {
-  if (!url) return;
-  await new Promise<void>((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve();
-    img.onerror = () => resolve();
-    img.src = url;
-  });
+import { Asset } from 'expo-asset';
+export async function preloadSplash() {
+  try {
+    await Asset.fromModule(require('../assets/splash_cat.jpeg')).downloadAsync();
+  } catch {}
 }
 
 
