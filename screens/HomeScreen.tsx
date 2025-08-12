@@ -75,15 +75,7 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={{ fontSize: 16, color: '#574A79', textAlign: 'center' }}>Your cozy cat comfort space</Text>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 16 }}>
-        <View>
-          <Text style={[textStyles.h1, { color: colors.text }]}>Purrple Calm</Text>
-          <Text style={[textStyles.body, { color: colors.mutedText }]}>{vibe ? 'V-inspired vibe: ON 🎷💜' : 'Vibe: Classic Purple'}</Text>
-        </View>
-        <Pressable onPress={() => navigation.navigate('Settings')} accessibilityLabel="Open settings">
-          <Text style={[textStyles.bodyMedium, { color: colors.accent }]}>⚙️</Text>
-        </Pressable>
-      </View>
+      {/* Removed duplicate page header below hero to avoid double title */}
 
       <View style={{ alignItems: 'center', marginBottom: 16 }}>
         <View style={{ width: 180, height: 180, alignItems: 'center', justifyContent: 'center' }}>
