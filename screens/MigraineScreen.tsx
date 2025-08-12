@@ -1,3 +1,226 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, BackHandler } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import DimOverlay from '../components/DimOverlay';
+import { loadJSON, saveJSON } from '../lib/storage';
+import { playOrCrossfade, stopAll, getCurrentKey } from '../lib/migraineAudio';
+
+type SoundKey = 'brown' | 'hum' | 'rain';
+
+const K_LAST = 'mig:last';
+type LastState = { sound: SoundKey; minutes: number; dim: 0.3|0.5|0.7 };
+
+export default function MigraineScreen({ route }: any) {
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [haptics, setHaptics] = useState(false);
+
+  // hydrate prefs
+  const [sound, setSound] = useState<SoundKey>('brown');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [minutes, setMinutes] = useState(10);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  const [dimOn, setDimOn] = useState(false);
+  const [dimLevel, setDimLevel] = useState<0.3|0.5|0.7>(0.5);
+
+  const timerRef = useRef<NodeJS.Timer | null>(null);
+  const autoStartedRef = useRef(false);
+
+  // load settings (reduceMotion/haptics) & last prefs
+  useEffect(() => {
+    (async () => {
+      const last = await loadJSON<LastState>(K_LAST, { sound: 'brown', minutes: 10, dim: 0.5 });
+      setSound(last.sound); setMinutes(last.minutes); setDimLevel(last.dim);
+      // optional global toggles (persisted elsewhere if you have a real Settings screen)
+      setReduceMotion(await loadJSON('settings:reduceMotion', false));
+      setHaptics(await loadJSON('settings:haptics', false));
+    })();
+  }, []);
+
+  // persist lightweight prefs
+  useEffect(() => { saveJSON(K_LAST, { sound, minutes, dim: dimLevel }); }, [sound, minutes, dimLevel]);
+
+  // Back button: gently lower dim instead of popping immediately
+  useEffect(() => {
+    const handler = () => {
+      if (dimOn) { setDimOn(false); return true; }
+      return false;
+    };
+    BackHandler.addEventListener('hardwareBackPress', handler);
+    return () => BackHandler.removeEventListener('hardwareBackPress', handler);
+  }, [dimOn]);
+
+  const tap = async () => { if (haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(()=>{}); };
+
+  const startTimer = useCallback((mins: number) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    const total = Math.max(1, Math.min(120, Math.floor(mins))) * 60;
+    setCountdown(total);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          clearInterval(timerRef.current!); timerRef.current = null;
+          setCountdown(null);
+          stopAll(250).finally(() => setIsPlaying(false));
+          if (Platform.OS === 'web') alert('Done'); else Alert.alert('Done');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setCountdown(null);
+  }, []);
+
+  const onPlayStop = async () => {
+    await tap();
+    if (isPlaying) {
+      await stopAll(250); setIsPlaying(false);
+    } else {
+      try {
+        await playOrCrossfade(sound, 250);
+        setIsPlaying(true);
+      } catch {
+        if (Platform.OS === 'web') alert('Tap again to allow audio.'); else Alert.alert('Audio', 'Tap again to allow audio.');
+      }
+    }
+  };
+
+  const selectSound = async (key: SoundKey) => {
+    await tap();
+    setSound(key);
+    if (isPlaying) { await playOrCrossfade(key, 250); }
+  };
+
+  // auto-start if navigated with params
+  useEffect(() => {
+    const mins = Number(route?.params?.minutes ?? 0);
+    const autoStart = route?.params?.autoStart === true || route?.params?.autoStart === 'true';
+    if (autoStart && mins > 0 && !autoStartedRef.current) {
+      autoStartedRef.current = true;
+      setMinutes(mins);
+      setDimOn(true);
+      setTimeout(() => { onPlayStop(); startTimer(mins); }, 200);
+    }
+  }, [route?.params]);
+
+  useEffect(() => () => { // cleanup
+    if (timerRef.current) clearInterval(timerRef.current);
+    stopAll(150);
+  }, []);
+
+  const mLabel = useMemo(() => {
+    if (countdown === null) return `${minutes} min`;
+    const m = Math.floor(countdown/60).toString().padStart(2,'0');
+    const s = (countdown%60).toString().padStart(2,'0');
+    return `${m}:${s}`;
+  }, [minutes, countdown]);
+
+  return (
+    <View style={s.wrap}>
+      <Text style={s.title}>Migraine</Text>
+      <Text style={s.sub}>Ultra-dim with gentle sound</Text>
+
+      {/* Sound */}
+      <Text style={s.section}>Sound</Text>
+      <Text style={s.mini}>Tap to start/stop. Switch sounds crossfades.</Text>
+
+      <View style={s.row}>
+        {(['brown','hum','rain'] as SoundKey[]).map((k) => (
+          <Pressable key={k} onPress={() => selectSound(k)} accessibilityLabel={`${k} sound`} style={[s.chip, sound===k && s.chipOn]}>
+            <Text style={[s.chipText, sound===k && s.chipTextOn]}>
+              {k==='brown'?'Brown noise':k==='hum'?'Soft hum':'Rain'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Pressable onPress={onPlayStop} style={[s.bigBtn, isPlaying && s.bigBtnOn]} accessibilityLabel={isPlaying?'Stop sound':'Play sound'}>
+        <Text style={s.bigBtnText}>{isPlaying?'Stop':'Play'}</Text>
+      </Pressable>
+
+      {/* Timer */}
+      <Text style={s.section}>Timer</Text>
+      <View style={s.row}>
+        {[1,5,10].map((m)=>(
+          <Pressable key={m} onPress={()=>setMinutes(m)} style={[s.chip, minutes===m && s.chipOn]}>
+            <Text style={[s.chipText, minutes===m && s.chipTextOn]}>{m}m</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={s.row}>
+        <Pressable onPress={()=>setMinutes(v=>Math.max(1, v-1))} style={s.smallBtn}><Text style={s.smallBtnText}>−1</Text></Pressable>
+        <Text style={s.current}>{mLabel}</Text>
+        <Pressable onPress={()=>setMinutes(v=>Math.min(120, v+1))} style={s.smallBtn}><Text style={s.smallBtnText}>+1</Text></Pressable>
+      </View>
+
+      <View style={s.row}>
+        {countdown===null ? (
+          <Pressable onPress={()=>{ startTimer(minutes); }} style={[s.bigBtn, s.primary]} accessibilityLabel="Start timer">
+            <Text style={s.bigBtnText}>Start</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={()=>{ stopTimer(); stopAll(150); setIsPlaying(false); }} style={[s.bigBtn, s.danger]} accessibilityLabel="Stop timer">
+            <Text style={s.bigBtnText}>Stop</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* Ultra-dim */}
+      <Text style={s.section}>Ultra-dim</Text>
+      <View style={s.row}>
+        <Pressable onPress={()=>setDimOn(v=>!v)} style={[s.bigBtn, dimOn && s.bigBtnOn]} accessibilityLabel={dimOn?'Turn dim off':'Turn dim on'}>
+          <Text style={s.bigBtnText}>{dimOn?'Dim ON':'Dim OFF'}</Text>
+        </Pressable>
+      </View>
+      <View style={s.row}>
+        {[0.3,0.5,0.7].map((v)=>(
+          <Pressable key={v} onPress={()=>setDimLevel(v as 0.3|0.5|0.7)} style={[s.chip, dimLevel===v && s.chipOn]}>
+            <Text style={[s.chipText, dimLevel===v && s.chipTextOn]}>{Math.round((v as number)*100)}%</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Quick tips – low stimulation */}
+      <Text style={s.section}>Quick Tips</Text>
+      <View style={s.card}>
+        <Text style={s.tip}>• Lower light and sound.</Text>
+        <Text style={s.tip}>• Small sips of water.</Text>
+        <Text style={s.tip}>• Rest your eyes a moment.</Text>
+      </View>
+
+      <DimOverlay visible={dimOn} level={dimLevel} onLevelChange={(lvl)=>setDimLevel(lvl)} onExit={()=>setDimOn(false)} reduceMotion={reduceMotion} />
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  wrap:{ flex:1, padding:18, backgroundColor:'#EFE9FB' },
+  title:{ fontSize:34, fontWeight:'800', color:'#1f1b2e', marginTop:8 },
+  sub:{ fontSize:16, color:'#4b445e', marginBottom:16 },
+  section:{ fontSize:18, fontWeight:'700', color:'#332b49', marginTop:12, marginBottom:6 },
+  mini:{ fontSize:14, color:'#6b6580', marginBottom:8 },
+  row:{ flexDirection:'row', flexWrap:'wrap', gap:10, alignItems:'center', marginBottom:10 },
+  chip:{ paddingVertical:10, paddingHorizontal:16, borderRadius:999, backgroundColor:'#e6dcff' },
+  chipOn:{ backgroundColor:'#8b5cf6' },
+  chipText:{ color:'#4b4b4b', fontSize:15, fontWeight:'600' },
+  chipTextOn:{ color:'white' },
+  bigBtn:{ backgroundColor:'#d7c8ff', paddingVertical:14, paddingHorizontal:22, borderRadius:14, alignItems:'center', minWidth:140 },
+  bigBtnOn:{ backgroundColor:'#8b5cf6' },
+  bigBtnText:{ color:'white', fontWeight:'800', fontSize:18 },
+  primary:{ backgroundColor:'#6d28d9' },
+  danger:{ backgroundColor:'#ef4444' },
+  smallBtn:{ backgroundColor:'#d7c8ff', paddingVertical:10, paddingHorizontal:16, borderRadius:10 },
+  smallBtnText:{ color:'white', fontWeight:'800', fontSize:18 },
+  current:{ fontSize:20, fontWeight:'800', color:'#332b49', minWidth:96, textAlign:'center' },
+  card:{ backgroundColor:'#fff7ff', borderRadius:14, padding:14 },
+  tip:{ color:'#4b445e', fontSize:16, marginBottom:6 },
+});
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Platform, ScrollView, Animated } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
