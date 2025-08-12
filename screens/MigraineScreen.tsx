@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+﻿import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, Platform, BackHandler } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import DimOverlay from '../components/DimOverlay';
@@ -154,7 +154,7 @@ export default function MigraineScreen({ route }: any) {
       </View>
 
       <View style={s.row}>
-        <Pressable onPress={()=>setMinutes(v=>Math.max(1, v-1))} style={s.smallBtn}><Text style={s.smallBtnText}>−1</Text></Pressable>
+        <Pressable onPress={()=>setMinutes(v=>Math.max(1, v-1))} style={s.smallBtn}><Text style={s.smallBtnText}>âˆ’1</Text></Pressable>
         <Text style={s.current}>{mLabel}</Text>
         <Pressable onPress={()=>setMinutes(v=>Math.min(120, v+1))} style={s.smallBtn}><Text style={s.smallBtnText}>+1</Text></Pressable>
       </View>
@@ -186,12 +186,12 @@ export default function MigraineScreen({ route }: any) {
         ))}
       </View>
 
-      {/* Quick tips – low stimulation */}
+      {/* Quick tips â€“ low stimulation */}
       <Text style={s.section}>Quick Tips</Text>
       <View style={s.card}>
-        <Text style={s.tip}>• Lower light and sound.</Text>
-        <Text style={s.tip}>• Small sips of water.</Text>
-        <Text style={s.tip}>• Rest your eyes a moment.</Text>
+        <Text style={s.tip}>â€¢ Lower light and sound.</Text>
+        <Text style={s.tip}>â€¢ Small sips of water.</Text>
+        <Text style={s.tip}>â€¢ Rest your eyes a moment.</Text>
       </View>
 
       <DimOverlay visible={dimOn} level={dimLevel} onLevelChange={(lvl)=>setDimLevel(lvl)} onExit={()=>setDimOn(false)} reduceMotion={reduceMotion} />
@@ -221,27 +221,7 @@ const s = StyleSheet.create({
   card:{ backgroundColor:'#fff7ff', borderRadius:14, padding:14 },
   tip:{ color:'#4b445e', fontSize:16, marginBottom:6 },
 });
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Platform, ScrollView, Animated } from 'react-native';
-import { useAppTheme, textStyles } from '../theme/ThemeProvider';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
-import * as Brightness from 'expo-brightness';
-import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
-import { ensureUnlocked, playOnce, stop as stopSfx } from '../utils/sfx';
-import PawButton from '../components/PawButton';
-import { saveEntry } from '../utils/storage';
-import NowPlayingBar from '../components/NowPlayingBar';
-import { useSettings } from '../providers/SettingsProvider';
-import ExerciseRunner from '../components/ExerciseRunner';
-import { useRef } from 'react';
-import { useRoute } from '@react-navigation/native';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
-
-export default function MigraineScreen({ navigation }: Props) {
-  const route = useRoute<any>();
-  const { colors } = useAppTheme();
+// Removed duplicate legacy imports block
   const { migraineDefaultMinutes, setMigraineDefaultMinutes, masterVolume } = useSettings();
   const [meow, setMeow] = useState<any | null>(null);
   const [mins, setMins] = React.useState<number>(migraineDefaultMinutes || 10);
@@ -314,7 +294,7 @@ export default function MigraineScreen({ navigation }: Props) {
 
   const stepText = [
     'Dim lights. Unclench jaw. Shoulders down.',
-    'Inhale 4 • Exhale 6 — slow and soft.',
+    'Inhale 4 â€¢ Exhale 6 â€” slow and soft.',
     'Cool pack on neck / warm hands if available.',
     'Close eyes: name 3 sounds, 2 touches, 1 smell.'
   ];
@@ -322,16 +302,16 @@ export default function MigraineScreen({ navigation }: Props) {
   // Quick tips list
   const QUICK_TIPS: string[] = [
     'Dim screen and reduce noise.',
-    'Small, steady sips of water help prevent dehydration — a common migraine trigger.',
+    'Small, steady sips of water help prevent dehydration â€” a common migraine trigger.',
     'Cool pack on neck or warm hands.',
     '4 in / 6 out breathing for 1 min.',
-    'Sudden new or severe symptoms → seek medical care.',
+    'Sudden new or severe symptoms â†’ seek medical care.',
   ];
 
   const [exerciseOpen, setExerciseOpen] = React.useState<{title:string, steps:{label:string, seconds:number}[]} | null>(null);
-  const EX_60_RESET = { title: '60-second Reset', steps: [ { label: '4-4-4 Breathing', seconds: 20 }, { label: 'Temple Massage – Left', seconds: 20 }, { label: 'Temple Massage – Right', seconds: 20 } ] };
+  const EX_60_RESET = { title: '60-second Reset', steps: [ { label: '4-4-4 Breathing', seconds: 20 }, { label: 'Temple Massage â€“ Left', seconds: 20 }, { label: 'Temple Massage â€“ Right', seconds: 20 } ] };
   const EX_EYE_SOOTHE = { title: 'Eye Soothe', steps: [ { label: 'Look Far (relax focus)', seconds: 20 }, { label: 'Blink & Soften Eyes', seconds: 10 }, { label: 'Palming (cover eyes)', seconds: 20 } ] };
-  const EX_NECK_RELEASE = { title: 'Neck Release', steps: [ { label: 'Left ear → left shoulder', seconds: 20 }, { label: 'Right ear → right shoulder', seconds: 20 }, { label: 'Chin tuck (gentle)', seconds: 20 } ] };
+  const EX_NECK_RELEASE = { title: 'Neck Release', steps: [ { label: 'Left ear â†’ left shoulder', seconds: 20 }, { label: 'Right ear â†’ right shoulder', seconds: 20 }, { label: 'Chin tuck (gentle)', seconds: 20 } ] };
 
   async function quickNote() {
     await saveEntry({ id: `${Date.now()}`, type: 'migraineNote', note: 'Quick note during migraine', ts: Date.now() });
@@ -345,7 +325,7 @@ export default function MigraineScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <Pressable onPress={() => navigation.goBack()}>
-          <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
+          <Text style={[textStyles.body, { color: colors.accent }]}>â† Back</Text>
         </Pressable>
 
         <View style={{ alignItems: 'center', marginTop: 24 }}>
@@ -358,7 +338,7 @@ export default function MigraineScreen({ navigation }: Props) {
           <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to start/stop.</Text>
           <View style={{ flexDirection:'row', gap:12, marginTop:8 }}>
             <PawButton
-              label={meow ? '⏸ Mochi Meow' : '▶︎ Mochi Meow'}
+              label={meow ? 'â¸ Mochi Meow' : 'â–¶ï¸Ž Mochi Meow'}
               onPress={async () => {
                 try {
                   await ensureUnlocked();
@@ -390,7 +370,7 @@ export default function MigraineScreen({ navigation }: Props) {
           <View style={{ flexDirection:'row', alignItems:'center', gap:12, marginTop:12 }}>
             <Pressable onPress={() => setMins(m => Math.max(1, m-1))} onLongPress={() => setMins(m => Math.max(1, m-5))}
               style={{ backgroundColor: colors.surface, paddingVertical:8, paddingHorizontal:14, borderRadius:12 }}>
-              <Text style={[textStyles.body, { color: colors.text }]}>−1</Text>
+              <Text style={[textStyles.body, { color: colors.text }]}>âˆ’1</Text>
             </Pressable>
 
             <Text style={[textStyles.h2, { color: colors.text }]}>{mins} min</Text>
@@ -422,7 +402,7 @@ export default function MigraineScreen({ navigation }: Props) {
           )}
 
           <View style={{ marginTop: 8 }}>
-            <Text style={[{ fontSize: 12, lineHeight: 16 }, { color: colors.mutedText }]}>Tip: Small, steady sips of water help prevent dehydration — a common migraine trigger.</Text>
+            <Text style={[{ fontSize: 12, lineHeight: 16 }, { color: colors.mutedText }]}>Tip: Small, steady sips of water help prevent dehydration â€” a common migraine trigger.</Text>
           </View>
         </View>
 
@@ -431,7 +411,7 @@ export default function MigraineScreen({ navigation }: Props) {
           <View style={{ marginTop: 8 }}>
             {QUICK_TIPS.map((t) => (
               <Text key={t} style={[textStyles.body, { color: colors.mutedText, marginBottom: 6 }]}>
-                • {t}
+                â€¢ {t}
               </Text>
             ))}
           </View>
@@ -478,3 +458,4 @@ export default function MigraineScreen({ navigation }: Props) {
     </View>
   );
 }
+
