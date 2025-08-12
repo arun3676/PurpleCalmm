@@ -70,7 +70,12 @@ export default function App() {
         <SettingsProvider onApplyTheme={(t) => { try { if (typeof document !== 'undefined') { document.documentElement.setAttribute('data-theme', t); } } catch {} }}>
           <ThemeProvider>
             <ThemedNavContainer>
-              <RootNavigator />
+              {/* Gate wraps the app and shows a small splash while hydrating */}
+              {/** BEGIN gate **/}
+              {React.createElement(require('./components/AppGate').default, { splashSrc: '/assets/loading_cat.png' },
+                React.createElement(RootNavigator, null)
+              )}
+              {/** END gate **/}
             </ThemedNavContainer>
           </ThemeProvider>
         </SettingsProvider>
