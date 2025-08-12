@@ -4,6 +4,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
+    "prebuild": "node scripts/copy-assets.js",
     "start": "expo start --tunnel --clear",
     "android": "expo run:android",
     "ios": "expo run:ios",

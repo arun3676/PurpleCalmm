@@ -32,7 +32,7 @@ export default function SplashScreen({ visible, progress, tip, onSkip }: Props) 
       zIndex: 9999 as any
     }}>
       <ImageBackground
-        source={{ uri: '/assets/splash_cat.jpg' }}
+        source={{ uri: '/assets/splash_cat.jpeg?v=1' }}
         resizeMode="cover"
         style={{ flex: 1, justifyContent: 'center' }}
         imageStyle={{ opacity: 0.6 }}
