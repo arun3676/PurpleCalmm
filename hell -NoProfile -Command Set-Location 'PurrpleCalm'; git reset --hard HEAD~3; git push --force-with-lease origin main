@@ -1,0 +1,8 @@
+[33m7314786[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix(CatHero): remove duplicate component definition causing redeclare of React
+[33mebf959a[m feat(home): add CatHero with focal background and use it in Home header
+[33ma91d602[m chore(assets): add splash_cat.jpeg to repo for Metro require()
+[33mb69aefd[m feat(splash): use require()-based splash asset; preload via expo-asset; bundle assets in app.json
+[33maf7375d[m chore(build): add prebuild asset copy to /public/assets; update splash to splash_cat.jpeg
+[33mcd7bdbf[m feat(splash): add Sirius-style splash with real boot progress and image preload
+[33m0fc836b[m feat(mochi): memory-aware chat (send memories, receive memoryAdd/forget); persist chat history
+[33m10edda6[m chore(public): add audio assets under /public/assets for web playback

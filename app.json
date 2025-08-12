@@ -14,7 +14,6 @@
       "package": "com.purrplecalm.app"
     },
     "web": { "bundler": "metro" },
-    "assetBundlePatterns": ["assets/*"],
     "plugins": ["expo-notifications", "expo-font"],
     "extra": { "eas": {} }
   }

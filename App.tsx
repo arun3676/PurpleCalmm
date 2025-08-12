@@ -14,8 +14,6 @@ import JournalTrendsScreen from './screens/JournalTrendsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CatChatScreen from './screens/CatChatScreen';
 import { SettingsProvider } from './providers/SettingsProvider';
-import SplashScreen from './components/SplashScreen';
-import { boot } from './utils/boot';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -66,24 +64,11 @@ function RootNavigator() {
 }
 
 export default function App() {
-  const [loading, setLoading] = React.useState(true);
-  const [pct, setPct] = React.useState(0);
-  const [tip, setTip] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    let mounted = true;
-    boot((p, t) => { if (!mounted) return; setPct(p); if (t) setTip(t); })
-      .finally(() => { if (mounted) setLoading(false); });
-    return () => { mounted = false; };
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SettingsProvider onApplyTheme={(t) => { try { if (typeof document !== 'undefined') { document.documentElement.setAttribute('data-theme', t); } } catch {} }}>
           <ThemeProvider>
-            {/* Splash overlay while booting */}
-            <SplashScreen visible={loading} progress={pct} tip={tip ?? undefined} />
             <ThemedNavContainer>
               <RootNavigator />
             </ThemedNavContainer>

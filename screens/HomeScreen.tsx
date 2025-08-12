@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Platform, Animated } from 'react-native';
+import BlendHero from '../components/BlendHero';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
@@ -7,7 +8,7 @@ import Card from '../components/Card';
 import CatAvatar from '../components/CatAvatar';
 import PawButton from '../components/PawButton';
 import PawRow from '../components/PawRow';
-import CatHero from '../components/CatHero';
+// Removed CatHero background header per request
 import CuddleAura from '../components/CuddleAura';
 import { calcJournalStreak, loadEntries, loadStickers } from '../utils/storage';
 import { selection } from '../utils/haptics';
@@ -49,26 +50,30 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-      <CatHero src={"/assets/splash_cat.jpeg"} focus={{ xPct: 60, yPct: 64 }} height={260} overlay="rgba(237,230,255,0.45)">
-        <View
-          style={{
-            alignSelf: 'center',
-            backgroundColor: 'rgba(255,255,255,0.65)',
-            borderColor: '#CFC0FF',
-            borderWidth: 1,
-            paddingVertical: 14,
-            paddingHorizontal: 18,
-            borderRadius: 20
-          }}
-        >
-          <Text style={{ fontSize: 28, fontWeight: '800', color: '#190F2A', textAlign: 'center' }}>
-            Purrple Calm
-          </Text>
-          <Text style={{ fontSize: 16, color: '#574A79', textAlign: 'center' }}>
-            Your cozy cat comfort space
-          </Text>
-        </View>
-      </CatHero>
+      <BlendHero
+        src={'/assets/splash_cat.jpeg'}
+        focus={{ xPct: 60, yPct: 64 }}
+        height={260}
+        overlay="rgba(237,230,255,0.42)"
+        blurPx={1.2}
+        fadeStop={0.68}
+      />
+      <View
+        style={{
+          alignSelf: 'center',
+          marginTop: -200,
+          backgroundColor: 'rgba(255,255,255,0.68)',
+          borderColor: '#CFC0FF',
+          borderWidth: 1,
+          paddingVertical: 14,
+          paddingHorizontal: 18,
+          borderRadius: 20,
+          ...(Platform.OS === 'web' ? ({ backdropFilter: 'blur(6px)' } as any) : null),
+        }}
+      >
+        <Text style={{ fontSize: 28, fontWeight: '800', color: '#190F2A', textAlign: 'center' }}>Purrple Calm</Text>
+        <Text style={{ fontSize: 16, color: '#574A79', textAlign: 'center' }}>Your cozy cat comfort space</Text>
+      </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 16 }}>
         <View>
