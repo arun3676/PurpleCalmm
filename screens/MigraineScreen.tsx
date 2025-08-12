@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, Platform, BackHandler } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import DimOverlay from '../components/DimOverlay';
