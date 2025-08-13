@@ -1,20 +1,48 @@
 {
   "expo": {
-    "name": "Purrple Calm",
-    "slug": "purrple-calm",
-    "scheme": "purrplecalm",
+    "name": "PurpleCalmm",
+    "slug": "purple-calmm",
+    "scheme": "purplecalmm",
     "version": "1.0.0",
     "orientation": "portrait",
-    "splash": { "resizeMode": "contain", "backgroundColor": "#0B0B14" },
-    "userInterfaceStyle": "automatic",
-    "ios": { "supportsTablet": true },
-    "android": {
-      "adaptiveIcon": { "backgroundColor": "#0B0B14" },
-      "permissions": ["VIBRATE", "WAKE_LOCK", "SCHEDULE_EXACT_ALARM", "USE_FULL_SCREEN_INTENT"],
-      "package": "com.purrplecalm.app"
+    "icon": "./assets/splash_cat.jpeg",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash_cat.jpeg",
+      "resizeMode": "cover",
+      "backgroundColor": "#EFE8FF"
     },
-    "web": { "bundler": "metro" },
-    "plugins": ["expo-notifications", "expo-font"],
-    "extra": { "eas": {} }
+    "assetBundlePatterns": ["**/*"],
+    "updates": { "fallbackToCacheTimeout": 0 },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.purrplecalm.app"
+    },
+    "android": {
+      "package": "com.purrplecalm.app",
+      "versionCode": 1,
+      "permissions": [
+        "VIBRATE",
+        "WAKE_LOCK",
+        "POST_NOTIFICATIONS"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/splash_cat.jpeg",
+        "backgroundColor": "#EFE8FF"
+      }
+    },
+    "plugins": [
+      "expo-keep-awake",
+      [
+        "expo-notifications",
+        {
+          "color": "#6B5BCE"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": { "projectId": "CHANGE_ME_LATER" }
+    },
+    "web": { "bundler": "metro" }
   }
 }
