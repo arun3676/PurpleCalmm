@@ -94,12 +94,51 @@ export default function CatChatScreen({ navigation }: Props) {
     navigation.navigate('Home');
   }
 
+  function resetChat() {
+    Alert.alert(
+      'Reset Chat History',
+      'This will clear all previous conversations with Mochi. Are you sure?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            const freshStart = [GREETING];
+            setMessages(freshStart);
+            saveChat(freshStart);
+            if (Platform.OS === 'web') {
+              alert('Chat history cleared! Starting fresh with Mochi.');
+            }
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ padding: 16 }}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Pressable onPress={() => navigation.goBack()}>
+            <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
+          </Pressable>
+          <Pressable 
+            onPress={resetChat}
+            style={{ 
+              backgroundColor: colors.surface, 
+              paddingVertical: 6, 
+              paddingHorizontal: 12, 
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: colors.mutedText + '30'
+            }}>
+            <Text style={[textStyles.body, { color: colors.mutedText, fontSize: 12 }]}>🗑️ Reset Chat</Text>
+          </Pressable>
+        </View>
         <Text style={[textStyles.h1, { color: colors.text, marginTop: 8 }]}>Mochi the Cat</Text>
         <Text style={[textStyles.body, { color: colors.mutedText }]}>A gentle place to talk</Text>
       </View>
