@@ -33,7 +33,14 @@ function generateWebAudio(key: Key): any {
   if (Platform.OS !== 'web') return null;
   
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    console.log(`Generating web audio for ${key}`);
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) {
+      console.warn('AudioContext not supported');
+      return null;
+    }
+    
+    const audioContext = new AudioContext();
     const bufferSize = audioContext.sampleRate * 2; // 2 seconds of audio
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
@@ -77,33 +84,56 @@ function generateWebAudio(key: Key): any {
     // Create a wrapper that mimics Audio.Sound interface
     return {
       playAsync: async () => {
-        if (isPlaying) return;
-        source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.loop = true;
-        source.connect(gainNode);
-        source.start();
-        isPlaying = true;
+        if (isPlaying) {
+          console.log(`${key} already playing`);
+          return;
+        }
+        try {
+          // Resume AudioContext if needed
+          if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+          }
+          
+          source = audioContext.createBufferSource();
+          source.buffer = buffer;
+          source.loop = true;
+          source.connect(gainNode);
+          source.start();
+          isPlaying = true;
+          console.log(`Started playing ${key}`);
+        } catch (error) {
+          console.error(`Error starting ${key}:`, error);
+        }
       },
       stopAsync: async () => {
         if (source && isPlaying) {
-          source.stop();
-          source.disconnect();
-          source = null;
-          isPlaying = false;
+          try {
+            source.stop();
+            source.disconnect();
+            source = null;
+            isPlaying = false;
+            console.log(`Stopped playing ${key}`);
+          } catch (error) {
+            console.error(`Error stopping ${key}:`, error);
+          }
         }
       },
       unloadAsync: async () => {
         if (source && isPlaying) {
-          source.stop();
-          source.disconnect();
-          source = null;
+          try {
+            source.stop();
+            source.disconnect();
+            source = null;
+          } catch (error) {
+            console.error(`Error unloading ${key}:`, error);
+          }
         }
         isPlaying = false;
       },
       setStatusAsync: async (status: any) => {
         if (status.volume !== undefined) {
           gainNode.gain.value = status.volume;
+          console.log(`Set volume for ${key}: ${status.volume}`);
         }
       },
       getStatusAsync: async () => ({ 
@@ -119,11 +149,15 @@ function generateWebAudio(key: Key): any {
 }
 
 async function load(key: Key) {
+  console.log(`Loading audio for key: ${key}, Platform: ${Platform.OS}`);
+  
   // For sadmeow, use the actual file
   if (key === 'sadmeow') {
     try {
+      console.log('Loading sadmeow from assets...');
       const sound = new Audio.Sound();
       await sound.loadAsync(assets[key], { volume: 0.0, isLooping: true }, true);
+      console.log('Sadmeow loaded successfully');
       return sound;
     } catch (error) {
       console.warn(`Failed to load sadmeow audio:`, error);
@@ -133,16 +167,22 @@ async function load(key: Key) {
   
   // For web and missing audio files, generate audio
   if (Platform.OS === 'web' && ['brown', 'hum', 'rain'].includes(key)) {
+    console.log(`Generating web audio for ${key}...`);
     const webSource = generateWebAudio(key as 'brown' | 'hum' | 'rain');
     if (webSource) {
+      console.log(`Web audio generated successfully for ${key}`);
       return webSource;
+    } else {
+      console.warn(`Failed to generate web audio for ${key}`);
     }
   }
   
   // Fallback to trying to load from assets for other platforms
   try {
+    console.log(`Trying to load ${key} from assets...`);
     const sound = new Audio.Sound();
     await sound.loadAsync(assets[key], { volume: 0.0, isLooping: true }, true);
+    console.log(`Asset loaded successfully for ${key}`);
     return sound;
   } catch (error) {
     console.warn(`Failed to load audio for ${key}:`, error);
