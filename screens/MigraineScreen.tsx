@@ -6,7 +6,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import * as Brightness from 'expo-brightness';
 import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
-import { ensureUnlocked, playOnce, stop as stopSfx } from '../utils/sfx';
+import { unlockAudio, playOnce, stop as stopSfx } from '../utils/sfx';
 import DimOverlay from '../components/DimOverlay';
 import { playOrCrossfade, stopAll } from '../lib/migraineAudio';
 import PawButton from '../components/PawButton';
@@ -234,7 +234,7 @@ export default function MigraineScreen({ navigation }: Props) {
             <Pressable onPress={async () => {
               console.log('Play button clicked, isPlaying:', isPlaying, 'sound:', sound);
               try {
-                await ensureUnlocked();
+                await unlockAudio();
                 if (isPlaying) { 
                   console.log('Stopping audio...');
                   await stopAll(250); 
