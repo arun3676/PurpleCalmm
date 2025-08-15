@@ -95,28 +95,53 @@ export default function CatChatScreen({ navigation }: Props) {
   }
 
   function resetChat() {
-    Alert.alert(
-      'Reset Chat History',
-      'This will clear all previous conversations with Mochi. Are you sure?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            const freshStart = [GREETING];
-            setMessages(freshStart);
-            saveChat(freshStart);
-            if (Platform.OS === 'web') {
-              alert('Chat history cleared! Starting fresh with Mochi.');
-            }
-          },
-        },
-      ]
-    );
+    console.log('Reset chat button clicked'); // Debug log
+    
+    try {
+      if (Platform.OS === 'web') {
+        // For web, use native confirm dialog
+        const confirmed = window.confirm('Reset Chat History\n\nThis will clear all previous conversations with Mochi. Are you sure?');
+        console.log('Confirmation result:', confirmed);
+        if (confirmed) {
+          const freshStart = [GREETING];
+          console.log('Setting fresh messages:', freshStart);
+          setMessages(freshStart);
+          saveChat(freshStart);
+          window.alert('Chat history cleared! Starting fresh with Mochi.');
+        }
+      } else {
+        // For mobile, use React Native Alert
+        Alert.alert(
+          'Reset Chat History',
+          'This will clear all previous conversations with Mochi. Are you sure?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Reset',
+              style: 'destructive',
+              onPress: () => {
+                const freshStart = [GREETING];
+                console.log('Setting fresh messages:', freshStart);
+                setMessages(freshStart);
+                saveChat(freshStart);
+              },
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error in resetChat:', error);
+      // Fallback: direct reset without confirmation
+      const freshStart = [GREETING];
+      setMessages(freshStart);
+      saveChat(freshStart);
+      if (Platform.OS === 'web') {
+        window.alert('Chat reset completed!');
+      }
+    }
   }
 
   return (
@@ -128,15 +153,20 @@ export default function CatChatScreen({ navigation }: Props) {
           </Pressable>
           <Pressable 
             onPress={resetChat}
-            style={{ 
-              backgroundColor: colors.surface, 
-              paddingVertical: 6, 
-              paddingHorizontal: 12, 
-              borderRadius: 8,
+            style={({ pressed }) => ({ 
+              backgroundColor: pressed ? colors.primaryDark : colors.surface, 
+              paddingVertical: 8, 
+              paddingHorizontal: 14, 
+              borderRadius: 10,
               borderWidth: 1,
-              borderColor: colors.mutedText + '30'
-            }}>
-            <Text style={[textStyles.body, { color: colors.mutedText, fontSize: 12 }]}>🗑️ Reset Chat</Text>
+              borderColor: colors.mutedText + '50',
+              shadowColor: '#000',
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              shadowOffset: { width: 0, height: 2 },
+              opacity: pressed ? 0.8 : 1
+            })}>
+            <Text style={[textStyles.body, { color: colors.text, fontSize: 13, fontWeight: '500' }]}>🗑️ Reset</Text>
           </Pressable>
         </View>
         <Text style={[textStyles.h1, { color: colors.text, marginTop: 8 }]}>Mochi the Cat</Text>
