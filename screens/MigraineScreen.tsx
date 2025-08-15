@@ -1,6 +1,7 @@
 ﻿
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Platform, ScrollView, Animated } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
@@ -33,7 +34,8 @@ export default function MigraineScreen({ navigation }: Props) {
   // Added state & helpers
   const [dim, setDim] = React.useState<number>(0);
   const [dimOn, setDimOn] = React.useState(false);
-  const [dimLevel, setDimLevel] = React.useState<0.3|0.5|0.7>(0.5);
+  const [dimLevel, setDimLevel] = React.useState<number>(0.5);
+  const [savedDimLevel, setSavedDimLevel] = React.useState<number>(0.5);
   const [running, setRunning] = React.useState(false);
   const [leftMs, setLeftMs] = React.useState(0);
   const tickRef = useRef<any>(null);
@@ -92,6 +94,62 @@ export default function MigraineScreen({ navigation }: Props) {
   React.useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current); }, []);
 
   useEffect(() => { setMins(migraineDefaultMinutes || 10); }, [migraineDefaultMinutes]);
+
+  // Load saved dim level on component mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem('migraineDimLevel');
+        if (saved) {
+          const level = parseFloat(saved);
+          setDimLevel(level);
+          setSavedDimLevel(level);
+        }
+      } catch (error) {
+        console.warn('Failed to load saved dim level:', error);
+      }
+    })();
+  }, []);
+
+  // Save dim level when it changes
+  const saveDimLevel = async (level: number) => {
+    try {
+      await AsyncStorage.setItem('migraineDimLevel', level.toString());
+      setSavedDimLevel(level);
+    } catch (error) {
+      console.warn('Failed to save dim level:', error);
+    }
+  };
+
+  // Dim control functions
+  const toggleDimMode = () => {
+    if (dimOn) {
+      setDimOn(false);
+    } else {
+      setDimOn(true);
+      setDimLevel(savedDimLevel);
+    }
+  };
+
+  const handleDimLevelChange = (level: number) => {
+    setDimLevel(level);
+    saveDimLevel(level);
+  };
+
+  const setQuickDimPreset = (preset: 'mild' | 'medium' | 'strong' | 'off') => {
+    const levels = { mild: 0.2, medium: 0.5, strong: 0.8, off: 0 };
+    const level = levels[preset];
+    
+    if (preset === 'off') {
+      setDimOn(false);
+    } else {
+      setDimLevel(level);
+      setDimOn(true);
+      saveDimLevel(level);
+    }
+    
+    showToast(`Dim mode: ${preset === 'off' ? 'Off' : `${preset} (${Math.round(level * 100)}%)`}`);
+  };
 
   useEffect(() => {
     (async () => { try { if (Platform.OS !== 'web') await Brightness.setSystemBrightnessAsync(0.02); } catch {} })();
@@ -165,6 +223,63 @@ export default function MigraineScreen({ navigation }: Props) {
         <View style={{ alignItems: 'center', marginTop: 24 }}>
           <Text style={[textStyles.h1, { color: colors.text }]}>Migraine</Text>
           <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>Ultra-dim with gentle sound</Text>
+        </View>
+
+        {/* Migraine-Friendly Brightness Controls */}
+        <View style={{ marginTop: 24 }}>
+          <Text style={[textStyles.h2, { color: colors.text }]}>Brightness Control</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>
+            {dimOn ? `Currently ${Math.round(dimLevel * 100)}% dimmed` : 'Tap to enable migraine-friendly dimming'}
+          </Text>
+          
+          {/* Quick toggle and preset buttons */}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12, flexWrap: 'wrap' as const }}>
+            <Pressable 
+              onPress={toggleDimMode}
+              style={{ 
+                backgroundColor: dimOn ? colors.primaryDark : colors.primary, 
+                paddingVertical: 10, 
+                paddingHorizontal: 16, 
+                borderRadius: 12,
+                shadowColor: '#000',
+                shadowOpacity: 0.15,
+                shadowRadius: 6,
+                shadowOffset: { width: 0, height: 2 },
+              }}>
+              <Text style={[textStyles.bodyMedium, { color: colors.text }]}>
+                {dimOn ? '🌙 Dim: ON' : '💡 Enable Dim'}
+              </Text>
+            </Pressable>
+            
+            {/* Preset buttons */}
+            <Pressable onPress={() => setQuickDimPreset('mild')}
+              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>Mild</Text>
+            </Pressable>
+            
+            <Pressable onPress={() => setQuickDimPreset('medium')}
+              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>Medium</Text>
+            </Pressable>
+            
+            <Pressable onPress={() => setQuickDimPreset('strong')}
+              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>Strong</Text>
+            </Pressable>
+            
+            <Pressable onPress={() => setDimOn(true)}
+              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>⚙️ Adjust</Text>
+            </Pressable>
+          </View>
+          
+          {dimOn && (
+            <View style={{ marginTop: 8, backgroundColor: colors.surface, borderRadius: 12, padding: 12 }}>
+              <Text style={[textStyles.body, { color: colors.mutedText, fontSize: 12 }]}>
+                💡 Tip: Dimming reduces eye strain during migraine episodes. Tap "Adjust" for fine control.
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={{ marginTop: 24 }}>
@@ -355,7 +470,7 @@ export default function MigraineScreen({ navigation }: Props) {
       <DimOverlay
         visible={dimOn}
         level={dimLevel}
-        onLevelChange={lvl => setDimLevel(lvl)}
+        onLevelChange={handleDimLevelChange}
         onExit={() => setDimOn(false)}
         reduceMotion={false}
       />
