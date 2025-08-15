@@ -1,66 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useAppTheme, textStyles } from '../theme/ThemeProvider';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
-import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
-import { scheduleOneShot, cancelAllNotifications } from '../lib/notify';
-import type { Sound } from 'expo-av';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Migraine'>;
-
-export default function MigraineScreen({ navigation }: Props) {
-  const { colors } = useAppTheme();
-  const [meow, setMeow] = useState<Sound | any | null>(null);
-
-  useEffect(() => () => { try { stopAndUnload(meow); } catch {} }, [meow]);
-
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-        </Pressable>
-
-        <View style={{ alignItems: 'center', marginTop: 24 }}>
-          <Text style={[textStyles.h1, { color: colors.text }]}>Migraine</Text>
-          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>Ultra-dim with gentle sound</Text>
-        </View>
-
-        <View style={{ marginTop: 24 }}>
-          <Text style={[textStyles.h2, { color: colors.text }]}>Sound</Text>
-          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to start/stop.</Text>
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-            <Pressable
-              onPress={async () => {
-                await resumeAll();
-                if (meow) {
-                  await stopAndUnload(meow); setMeow(null);
-                } else {
-                  await stopAllSongs();
-                  const s = await playSong('sadmeow', 0.7, true);
-                  setMeow(s);
-                }
-              }}
-              style={{ backgroundColor: colors.surface, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}
-            >
-              <Text style={[textStyles.bodyMedium, { color: colors.text }]}>{meow ? '⏸ Mochi Meow' : '▶︎ Mochi Meow'}</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={{ marginTop: 16, backgroundColor: colors.surface, borderRadius: 16, padding: 14 }}>
-          <Text style={[textStyles.h2, { color: colors.text }]}>Quick Tips</Text>
-          <View style={{ marginTop: 8 }}>
-            {['Lower light and sound.','Small sips of water.','Rest your eyes a moment.'].map((t) => (
-              <Text key={t} style={[textStyles.body, { color: colors.mutedText, marginBottom: 6 }]}>• {t}</Text>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
+﻿
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Platform, ScrollView, Animated } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
@@ -169,20 +107,48 @@ export default function MigraineScreen({ navigation }: Props) {
 
   // Quick tips list
   const QUICK_TIPS: string[] = [
-    'Dim screen and reduce noise.',
+    'Dim screen and reduce noise immediately.',
     'Small, steady sips of water help prevent dehydration — a common migraine trigger.',
-    'Cool pack on neck or warm hands.',
-    '4 in / 6 out breathing for 1 min.',
+    'Cool pack on neck or warm hands for comfort.',
+    '4 in / 6 out breathing for 1 minute.',
+    'Try the 60-second reset exercise for quick relief.',
     'Sudden new or severe symptoms → seek medical care.',
   ];
 
   const [exerciseOpen, setExerciseOpen] = React.useState<{title:string, steps:{label:string, seconds:number}[]} | null>(null);
-  const EX_60_RESET = { title: '60-second Reset', steps: [ { label: '4-4-4 Breathing', seconds: 20 }, { label: 'Temple Massage – Left', seconds: 20 }, { label: 'Temple Massage – Right', seconds: 20 } ] };
-  const EX_EYE_SOOTHE = { title: 'Eye Soothe', steps: [ { label: 'Look Far (relax focus)', seconds: 20 }, { label: 'Blink & Soften Eyes', seconds: 10 }, { label: 'Palming (cover eyes)', seconds: 20 } ] };
-  const EX_NECK_RELEASE = { title: 'Neck Release', steps: [ { label: 'Left ear → left shoulder', seconds: 20 }, { label: 'Right ear → right shoulder', seconds: 20 }, { label: 'Chin tuck (gentle)', seconds: 20 } ] };
+  
+  // Exercise definitions with detailed steps
+  const EX_60_RESET = { 
+    title: '60-second Reset', 
+    steps: [ 
+      { label: '4-4-4 Breathing: Inhale 4, hold 4, exhale 4', seconds: 20 }, 
+      { label: 'Temple Massage – Left side gently', seconds: 20 }, 
+      { label: 'Temple Massage – Right side gently', seconds: 20 } 
+    ] 
+  };
+  
+  const EX_EYE_SOOTHE = { 
+    title: 'Eye Soothe', 
+    steps: [ 
+      { label: 'Look far away to relax eye focus', seconds: 20 }, 
+      { label: 'Blink slowly & soften your gaze', seconds: 10 }, 
+      { label: 'Palming: cover eyes with warm hands', seconds: 20 } 
+    ] 
+  };
+  
+  const EX_NECK_RELEASE = { 
+    title: 'Neck Release', 
+    steps: [ 
+      { label: 'Gently tilt left ear toward left shoulder', seconds: 20 }, 
+      { label: 'Gently tilt right ear toward right shoulder', seconds: 20 }, 
+      { label: 'Chin tuck: gently tuck chin to chest', seconds: 20 } 
+    ] 
+  };
 
   async function quickNote() {
-    await saveEntry({ id: `${Date.now()}`, type: 'migraineNote', note: 'Quick note during migraine', ts: Date.now() });
+    const note = `Migraine episode - ${new Date().toLocaleString()}`;
+    await saveEntry({ id: `${Date.now()}`, type: 'migraineNote', note, ts: Date.now() });
+    showToast('Quick note saved');
   }
 
   return (
@@ -287,18 +253,37 @@ export default function MigraineScreen({ navigation }: Props) {
         </View>
 
         <View style={{ marginTop: 22 }}>
-          <Text style={[textStyles.h2, { color: colors.text }]}>Exercises</Text>
-          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to run a short guided set.</Text>
-          <View style={{ flexDirection:'row', flexWrap:'wrap' as const, gap:10, marginTop:8 }}>
-            <PawButton label="60-sec Reset" onPress={async () => { await resumeAll(); startSession(mins); setExerciseOpen(EX_60_RESET); }} />
-            <PawButton label="Eye Soothe" onPress={async () => { await resumeAll(); startSession(mins); setExerciseOpen(EX_EYE_SOOTHE); }} />
-            <PawButton label="Neck Release" onPress={async () => { await resumeAll(); startSession(mins); setExerciseOpen(EX_NECK_RELEASE); }} />
+          <Text style={[textStyles.h2, { color: colors.text }]}>Migraine Exercises</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Guided exercises to help relieve migraine symptoms</Text>
+          
+          <View style={{ marginTop: 12 }}>
+            <Text style={[textStyles.bodyMedium, { color: colors.text, marginBottom: 8 }]}>Breathing & Reset</Text>
+            <View style={{ flexDirection:'row', flexWrap:'wrap' as const, gap:10, marginBottom: 16 }}>
+              <PawButton label="60-sec Reset" onPress={async () => { await resumeAll(); setExerciseOpen(EX_60_RESET); }} />
+            </View>
           </View>
-        </View>
 
-        <View style={{ marginTop: 12, flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-          <PawButton label="Start Timer" onPress={async () => { await resumeAll(); startSession(mins); }} />
-          <PawButton label="Quick Note" onPress={quickNote} />
+          <View style={{ marginTop: 12 }}>
+            <Text style={[textStyles.bodyMedium, { color: colors.text, marginBottom: 8 }]}>Eye Relief</Text>
+            <View style={{ flexDirection:'row', flexWrap:'wrap' as const, gap:10, marginBottom: 16 }}>
+              <PawButton label="Eye Soothe" onPress={async () => { await resumeAll(); setExerciseOpen(EX_EYE_SOOTHE); }} />
+            </View>
+          </View>
+
+          <View style={{ marginTop: 12 }}>
+            <Text style={[textStyles.bodyMedium, { color: colors.text, marginBottom: 8 }]}>Tension Release</Text>
+            <View style={{ flexDirection:'row', flexWrap:'wrap' as const, gap:10, marginBottom: 16 }}>
+              <PawButton label="Neck Release" onPress={async () => { await resumeAll(); setExerciseOpen(EX_NECK_RELEASE); }} />
+            </View>
+          </View>
+
+          <View style={{ marginTop: 12 }}>
+            <Text style={[textStyles.bodyMedium, { color: colors.text, marginBottom: 8 }]}>Tools</Text>
+            <View style={{ flexDirection:'row', flexWrap:'wrap' as const, gap:10, marginBottom: 24 }}>
+              <PawButton label="Start Timer" onPress={async () => { await resumeAll(); startSession(mins); }} />
+              <PawButton label="Quick Note" onPress={quickNote} />
+            </View>
+          </View>
         </View>
 
       </ScrollView>
