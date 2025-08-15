@@ -24,7 +24,7 @@ export default function MigraineScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
   const { migraineDefaultMinutes, setMigraineDefaultMinutes, masterVolume } = useSettings();
   const [meow, setMeow] = useState<any | null>(null);
-  const [sound, setSound] = useState<'brown'|'hum'|'rain'>('brown');
+  const [sound, setSound] = useState<'brown'|'hum'|'rain'|'sadmeow'>('brown');
   const [isPlaying, setIsPlaying] = useState(false);
   const [mins, setMins] = React.useState<number>(migraineDefaultMinutes || 10);
   const [resetRunning, setResetRunning] = useState(false);
@@ -168,25 +168,86 @@ export default function MigraineScreen({ navigation }: Props) {
         </View>
 
         <View style={{ marginTop: 24 }}>
-          <Text style={[textStyles.h2, { color: colors.text }]}>Sound</Text>
-          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to start/stop. Switch sounds crossfades.</Text>
-          <View style={{ flexDirection:'row', gap:12, marginTop:8, flexWrap:'wrap' as const }}>
-            {(['brown','hum','rain'] as const).map(k => (
-              <Pressable key={k} onPress={async () => { setSound(k); if (isPlaying) await playOrCrossfade(k, 250); }}
-                style={{ backgroundColor: sound===k? colors.primary : colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
-                <Text style={[textStyles.body, { color: colors.text }]}>{k==='brown'?'Brown noise':k==='hum'?'Soft hum':'Rain'}</Text>
+          <Text style={[textStyles.h2, { color: colors.text }]}>Migraine Sounds</Text>
+          <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to select sound, then play/pause. Only one sound plays at a time.</Text>
+          
+          <View style={{ marginTop: 12 }}>
+            <Text style={[textStyles.bodyMedium, { color: colors.text, marginBottom: 8 }]}>Available Sounds</Text>
+            <View style={{ flexDirection:'row', gap:12, marginTop:8, flexWrap:'wrap' as const }}>
+              {(['brown','hum','rain','sadmeow'] as const).map(k => (
+                <Pressable 
+                  key={k} 
+                  onPress={async () => { 
+                    setSound(k); 
+                    if (isPlaying) {
+                      await stopAll(250);
+                      setIsPlaying(false);
+                      // Start new sound after brief delay
+                      setTimeout(async () => {
+                        await playOrCrossfade(k, 250); 
+                        setIsPlaying(true);
+                      }, 300);
+                    }
+                  }}
+                  style={{ 
+                    backgroundColor: sound===k? colors.primary : colors.surface, 
+                    paddingVertical:8, 
+                    paddingHorizontal:12, 
+                    borderRadius:12,
+                    borderWidth: sound===k && isPlaying ? 2 : 0,
+                    borderColor: colors.primaryDark
+                  }}
+                >
+                  <Text style={[textStyles.body, { color: colors.text }]}>
+                    {k==='brown'?'🌫️ Brown Noise':
+                     k==='hum'?'🎵 Soft Hum':
+                     k==='rain'?'🌧️ Rain':
+                     k==='sadmeow'?'🐱 Mochi Meow':'Unknown'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={{ marginTop: 12 }}>
+              <Pressable onPress={async () => {
+                try {
+                  await ensureUnlocked();
+                  if (isPlaying) { 
+                    await stopAll(250); 
+                    setIsPlaying(false); 
+                  } else { 
+                    await playOrCrossfade(sound, 250); 
+                    setIsPlaying(true); 
+                  }
+                } catch (error) {
+                  console.warn('Audio playback error:', error);
+                }
+              }}
+                style={{ 
+                  backgroundColor: isPlaying? colors.primaryDark : colors.primary, 
+                  paddingVertical:12, 
+                  paddingHorizontal:16, 
+                  borderRadius:12,
+                  alignSelf: 'flex-start',
+                  shadowColor: '#000',
+                  shadowOpacity: 0.15,
+                  shadowRadius: 6,
+                  shadowOffset: { width: 0, height: 2 },
+                }}>
+                <Text style={[textStyles.bodyMedium, { color: colors.text }]}>
+                  {isPlaying ? '⏸️ Pause Audio' : '▶️ Play Audio'}
+                </Text>
               </Pressable>
-            ))}
-            <Pressable onPress={async () => {
-              try {
-                await ensureUnlocked();
-                if (isPlaying) { await stopAll(250); setIsPlaying(false); }
-                else { await playOrCrossfade(sound, 250); setIsPlaying(true); }
-              } catch {}
-            }}
-              style={{ backgroundColor: isPlaying? colors.primaryDark : colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
-              <Text style={[textStyles.body, { color: colors.text }]}>{isPlaying ? 'Stop' : 'Play'}</Text>
-            </Pressable>
+              
+              {isPlaying && (
+                <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 6 }]}>
+                  Now playing: {sound==='brown'?'Brown Noise':
+                               sound==='hum'?'Soft Hum':
+                               sound==='rain'?'Rain':
+                               sound==='sadmeow'?'Mochi Meow':'Unknown'}
+                </Text>
+              )}
+            </View>
           </View>
         </View>
 
