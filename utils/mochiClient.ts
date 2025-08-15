@@ -34,10 +34,60 @@ export async function askMochi(history: ChatMsg[], memories: string[] = []): Pro
   return json as MochiReply;
 }
 
-const CHAT_KEY = 'mochi.chat.v1';
-export function loadChat(): ChatMsg[] {
-  try { return JSON.parse(localStorage.getItem(CHAT_KEY) || '[]'); } catch { return []; }
+// Generate a unique session ID for this browser/tab
+function getSessionId(): string {
+  let sessionId = sessionStorage.getItem('chat.session.id');
+  if (!sessionId) {
+    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    sessionStorage.setItem('chat.session.id', sessionId);
+  }
+  return sessionId;
 }
+
+const CHAT_KEY_BASE = 'mochi.chat.v1';
+function getChatKey(): string {
+  return `${CHAT_KEY_BASE}.${getSessionId()}`;
+}
+
+export function loadChat(): ChatMsg[] {
+  try { 
+    // First check session-specific storage
+    const sessionKey = getChatKey();
+    const sessionData = localStorage.getItem(sessionKey);
+    if (sessionData) {
+      return JSON.parse(sessionData);
+    }
+    
+    // Fallback to old key for existing users (migration)
+    const oldData = localStorage.getItem(CHAT_KEY_BASE);
+    if (oldData) {
+      const parsed = JSON.parse(oldData);
+      // Save to new session-specific key
+      localStorage.setItem(sessionKey, JSON.stringify(parsed));
+      // Clear old key to avoid confusion
+      localStorage.removeItem(CHAT_KEY_BASE);
+      return parsed;
+    }
+    
+    return [];
+  } catch { 
+    return []; 
+  }
+}
+
 export function saveChat(msgs: ChatMsg[]) {
-  try { localStorage.setItem(CHAT_KEY, JSON.stringify(msgs.slice(-40))); } catch {}
+  try { 
+    const sessionKey = getChatKey();
+    localStorage.setItem(sessionKey, JSON.stringify(msgs.slice(-40))); 
+  } catch {}
+}
+
+// Function to clear current session (for reset)
+export function clearCurrentSession() {
+  try {
+    const sessionKey = getChatKey();
+    localStorage.removeItem(sessionKey);
+    // Also clear the session ID to start completely fresh
+    sessionStorage.removeItem('chat.session.id');
+  } catch {}
 }

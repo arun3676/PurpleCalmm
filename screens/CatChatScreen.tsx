@@ -5,12 +5,14 @@ import { RootStackParamList } from '../App';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { saveEntry } from '../utils/storage';
 import { stopAndUnload, playMochiLullaby, playSong, stopAllSongs } from '../utils/audio';
-import { askMochi, ChatMsg, loadChat, saveChat } from '../utils/mochiClient';
+import { askMochi, ChatMsg, loadChat, saveChat, clearCurrentSession } from '../utils/mochiClient';
 import { memoryStrings, addMemories, forgetMemories } from '../utils/memory';
 import { useNavigation } from '@react-navigation/native';
 import { useSettings } from '../providers/SettingsProvider';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatChat'>;
+
+// Version: 2.0 - In-chat reset confirmation (no popups) - Updated: Dec 19 2024
 
 export default function CatChatScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
@@ -27,6 +29,12 @@ export default function CatChatScreen({ navigation }: Props) {
   const [thinking, setThinking] = useState(false);
   const [lullaby, setLullaby] = useState<any | null>(null);
   const [softKitty, setSoftKitty] = useState<any | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  
+  // Debug: Log when component mounts
+  useEffect(() => {
+    console.log('CatChatScreen mounted with showResetConfirm:', showResetConfirm);
+  }, []);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => { scrollRef.current?.scrollToEnd({ animated: true }); }, [messages.length]);
@@ -94,54 +102,31 @@ export default function CatChatScreen({ navigation }: Props) {
     navigation.navigate('Home');
   }
 
-  function resetChat() {
-    console.log('Reset chat button clicked'); // Debug log
+  function initiateReset() {
+    console.log('Initiating reset - should show in-chat confirmation');
+    setShowResetConfirm(true);
+  }
+
+  function confirmReset() {
+    // Clear session storage completely
+    clearCurrentSession();
     
-    try {
-      if (Platform.OS === 'web') {
-        // For web, use native confirm dialog
-        const confirmed = window.confirm('Reset Chat History\n\nThis will clear all previous conversations with Mochi. Are you sure?');
-        console.log('Confirmation result:', confirmed);
-        if (confirmed) {
-          const freshStart = [GREETING];
-          console.log('Setting fresh messages:', freshStart);
-          setMessages(freshStart);
-          saveChat(freshStart);
-          window.alert('Chat history cleared! Starting fresh with Mochi.');
-        }
-      } else {
-        // For mobile, use React Native Alert
-        Alert.alert(
-          'Reset Chat History',
-          'This will clear all previous conversations with Mochi. Are you sure?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Reset',
-              style: 'destructive',
-              onPress: () => {
-                const freshStart = [GREETING];
-                console.log('Setting fresh messages:', freshStart);
-                setMessages(freshStart);
-                saveChat(freshStart);
-              },
-            },
-          ]
-        );
-      }
-    } catch (error) {
-      console.error('Error in resetChat:', error);
-      // Fallback: direct reset without confirmation
-      const freshStart = [GREETING];
-      setMessages(freshStart);
-      saveChat(freshStart);
-      if (Platform.OS === 'web') {
-        window.alert('Chat reset completed!');
-      }
-    }
+    const freshStart = [GREETING];
+    setMessages(freshStart);
+    saveChat(freshStart);
+    setShowResetConfirm(false);
+    
+    // Add a system message to show reset was successful
+    setTimeout(() => {
+      setMessages([...freshStart, { 
+        role: 'assistant', 
+        content: "✨ Chat history has been cleared! I'm here with a fresh start. How can I help you today?" 
+      }]);
+    }, 500);
+  }
+
+  function cancelReset() {
+    setShowResetConfirm(false);
   }
 
   return (
@@ -152,7 +137,7 @@ export default function CatChatScreen({ navigation }: Props) {
             <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
           </Pressable>
           <Pressable 
-            onPress={resetChat}
+            onPress={initiateReset}
             style={({ pressed }) => ({ 
               backgroundColor: pressed ? colors.primaryDark : colors.surface, 
               paddingVertical: 8, 
@@ -179,6 +164,58 @@ export default function CatChatScreen({ navigation }: Props) {
             <Text style={[textStyles.body, { color: colors.text }]}>{m.content}</Text>
           </View>
         ))}
+        
+        {/* In-chat reset confirmation */}
+        {showResetConfirm && (
+          <View style={{ 
+            backgroundColor: colors.surface, 
+            borderRadius: 16, 
+            padding: 16, 
+            marginVertical: 12,
+            borderWidth: 2,
+            borderColor: colors.primary + '30',
+            shadowColor: '#000',
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+          }}>
+            <Text style={[textStyles.h3, { color: colors.text, textAlign: 'center', marginBottom: 8 }]}>
+              🗑️ Reset Chat History
+            </Text>
+            <Text style={[textStyles.body, { color: colors.mutedText, textAlign: 'center', marginBottom: 16 }]}>
+              This will clear all previous conversations with Mochi. Are you sure?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
+              <Pressable 
+                onPress={cancelReset}
+                style={{ 
+                  backgroundColor: colors.surface, 
+                  borderWidth: 2,
+                  borderColor: colors.mutedText + '40',
+                  paddingVertical: 10, 
+                  paddingHorizontal: 20, 
+                  borderRadius: 12,
+                  minWidth: 80,
+                  alignItems: 'center'
+                }}>
+                <Text style={[textStyles.bodyMedium, { color: colors.text }]}>Cancel</Text>
+              </Pressable>
+              <Pressable 
+                onPress={confirmReset}
+                style={{ 
+                  backgroundColor: '#ff4444', 
+                  paddingVertical: 10, 
+                  paddingHorizontal: 20, 
+                  borderRadius: 12,
+                  minWidth: 80,
+                  alignItems: 'center'
+                }}>
+                <Text style={[textStyles.bodyMedium, { color: 'white', fontWeight: '600' }]}>Reset</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+        
         {thinking && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
       </ScrollView>
 
