@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Animated } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import Svg, { Path } from 'react-native-svg';
+import CatBackButton from '../components/CatBackButton';
 import { saveSticker } from '../utils/storage';
 
 const PHASE = 4000; // 4s each
@@ -45,9 +46,7 @@ export default function CalmScreen({ navigation }: any) {
 
   return (
     <View style={{ flex:1, backgroundColor: colors.background, padding:16 }}>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-      </Pressable>
+      <CatBackButton onPress={() => navigation.goBack()} />
 
       <View style={{ alignItems:'center', marginTop:24 }}>
         <Text style={[textStyles.h1, { color: colors.text }]}>Calm</Text>

@@ -6,6 +6,7 @@ import { RootStackParamList } from '../App';
 import PawButton from '../components/PawButton';
 import { loadEntries, saveEntry, Entry, deleteEntry, clearJournal } from '../utils/storage';
 import { success, selection } from '../utils/haptics';
+import CatBackButton from '../components/CatBackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Journal'>;
 
@@ -48,9 +49,7 @@ export default function JournalScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-      </Pressable>
+      <CatBackButton onPress={() => navigation.goBack()} />
       <View style={{ alignItems: 'center', marginTop: 24 }}>
         <Text style={[textStyles.h1, { color: colors.text }]}>Journal</Text>
         <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>3-tap micro-log</Text>

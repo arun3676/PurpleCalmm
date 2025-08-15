@@ -4,6 +4,7 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { Entry, loadEntries } from '../utils/storage';
+import CatBackButton from '../components/CatBackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'JournalTrends'>;
 
@@ -22,9 +23,7 @@ export default function JournalTrendsScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-      </Pressable>
+      <CatBackButton onPress={() => navigation.goBack()} />
       <Text style={[textStyles.h1, { color: colors.text, marginTop: 12 }]}>Trends</Text>
       <Text style={[textStyles.body, { color: colors.mutedText, marginBottom: 12 }]}>Weekly sparkline</Text>
 

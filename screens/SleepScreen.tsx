@@ -9,6 +9,7 @@ import { unlockAudio, playGoodnight } from '../utils/sfx';
 import { useSettings } from '../providers/SettingsProvider';
 import type { Sound } from 'expo-av';
 import { soft, success } from '../utils/haptics';
+import CatBackButton from '../components/CatBackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Sleep'>;
 
@@ -63,9 +64,7 @@ export default function SleepScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-      </Pressable>
+      <CatBackButton onPress={() => navigation.goBack()} />
 
       <View style={{ alignItems: 'center', marginTop: 24 }}>
         <Text style={[textStyles.h1, { color: colors.text }]}>Sleep</Text>

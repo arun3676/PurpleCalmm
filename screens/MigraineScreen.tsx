@@ -13,6 +13,7 @@ import { playOrCrossfade, stopAll } from '../lib/migraineAudio';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
 import NowPlayingBar from '../components/NowPlayingBar';
+import CatBackButton from '../components/CatBackButton';
 import { useSettings } from '../providers/SettingsProvider';
 import ExerciseRunner from '../components/ExerciseRunner';
 import { useRef } from 'react';
@@ -217,9 +218,7 @@ export default function MigraineScreen({ navigation }: Props) {
         contentContainerStyle={{ paddingBottom: 80, paddingHorizontal: 16, paddingTop: 8 }}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable onPress={() => navigation.goBack()}>
-          <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-        </Pressable>
+        <CatBackButton onPress={() => navigation.goBack()} />
 
         <View style={{ alignItems: 'center', marginTop: 24 }}>
           <Text style={[textStyles.h1, { color: colors.text }]}>Migraine</Text>

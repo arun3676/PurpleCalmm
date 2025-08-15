@@ -9,6 +9,7 @@ import { askMochi, ChatMsg, loadChat, saveChat, clearCurrentSession } from '../u
 import { memoryStrings, addMemories, forgetMemories } from '../utils/memory';
 import { useNavigation } from '@react-navigation/native';
 import { useSettings } from '../providers/SettingsProvider';
+import CatBackButton from '../components/CatBackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatChat'>;
 
@@ -133,9 +134,7 @@ export default function CatChatScreen({ navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ padding: 16 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Pressable onPress={() => navigation.goBack()}>
-            <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-          </Pressable>
+          <CatBackButton onPress={() => navigation.goBack()} />
           <Pressable 
             onPress={initiateReset}
             style={({ pressed }) => ({ 

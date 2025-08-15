@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { useSettings } from '../providers/SettingsProvider';
 import { playSong, stopAndUnload } from '../utils/audio';
+import CatBackButton from '../components/CatBackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -37,9 +38,7 @@ export default function SettingsScreen({ navigation }: Props){
 
   return (
     <ScrollView contentContainerStyle={{ padding:16, paddingBottom:40 }}>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={[textStyles.body, { color: colors.accent }]}>← Back</Text>
-      </Pressable>
+      <CatBackButton onPress={() => navigation.goBack()} />
       <Text style={{ fontSize:28, fontWeight:'700', marginBottom:10, color: colors.text }}>Settings</Text>
 
       <Text style={{ fontSize:18, fontWeight:'700', marginTop:8, color: colors.text }}>Theme</Text>
