@@ -8,7 +8,7 @@ import { RootStackParamList } from '../App';
 import * as Brightness from 'expo-brightness';
 import { playSong, stopAndUnload, stopAllSongs, resumeAll } from '../utils/audio';
 import { unlockAudio, playOnce, stop as stopSfx } from '../utils/sfx';
-import DimOverlay from '../components/DimOverlay';
+// import DimOverlay from '../components/DimOverlay'; // Removed - using simple overlay instead
 import { playOrCrossfade, stopAll } from '../lib/migraineAudio';
 import PawButton from '../components/PawButton';
 import { saveEntry } from '../utils/storage';
@@ -142,6 +142,7 @@ export default function MigraineScreen({ navigation }: Props) {
     
     if (preset === 'off') {
       setDimOn(false);
+      setDimLevel(0);
     } else {
       setDimLevel(level);
       setDimOn(true);
@@ -229,54 +230,59 @@ export default function MigraineScreen({ navigation }: Props) {
         <View style={{ marginTop: 24 }}>
           <Text style={[textStyles.h2, { color: colors.text }]}>Brightness Control</Text>
           <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>
-            {dimOn ? `Currently ${Math.round(dimLevel * 100)}% dimmed` : 'Tap to enable migraine-friendly dimming'}
+            {dimOn ? `Currently ${Math.round(dimLevel * 100)}% dimmed` : 'Choose dimming level for eye comfort'}
           </Text>
           
-          {/* Quick toggle and preset buttons */}
+          {/* Simple brightness control buttons */}
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12, flexWrap: 'wrap' as const }}>
-            <Pressable 
-              onPress={toggleDimMode}
+            <Pressable onPress={() => setQuickDimPreset('off')}
               style={{ 
-                backgroundColor: dimOn ? colors.primaryDark : colors.primary, 
+                backgroundColor: !dimOn ? colors.primary : colors.surface, 
                 paddingVertical: 10, 
                 paddingHorizontal: 16, 
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOpacity: 0.15,
-                shadowRadius: 6,
-                shadowOffset: { width: 0, height: 2 },
+                borderRadius: 12 
               }}>
-              <Text style={[textStyles.bodyMedium, { color: colors.text }]}>
-                {dimOn ? '🌙 Dim: ON' : '💡 Enable Dim'}
-              </Text>
+              <Text style={[textStyles.body, { color: colors.text }]}>💡 Normal</Text>
             </Pressable>
             
-            {/* Preset buttons */}
             <Pressable onPress={() => setQuickDimPreset('mild')}
-              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
-              <Text style={[textStyles.body, { color: colors.text }]}>Mild</Text>
+              style={{ 
+                backgroundColor: (dimOn && dimLevel === 0.2) ? colors.primary : colors.surface, 
+                paddingVertical: 10, 
+                paddingHorizontal: 16, 
+                borderRadius: 12 
+              }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>🌙 Mild (20%)</Text>
             </Pressable>
             
             <Pressable onPress={() => setQuickDimPreset('medium')}
-              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
-              <Text style={[textStyles.body, { color: colors.text }]}>Medium</Text>
+              style={{ 
+                backgroundColor: (dimOn && dimLevel === 0.5) ? colors.primary : colors.surface, 
+                paddingVertical: 10, 
+                paddingHorizontal: 16, 
+                borderRadius: 12 
+              }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>🌚 Medium (50%)</Text>
             </Pressable>
             
             <Pressable onPress={() => setQuickDimPreset('strong')}
-              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
-              <Text style={[textStyles.body, { color: colors.text }]}>Strong</Text>
-            </Pressable>
-            
-            <Pressable onPress={() => setDimOn(true)}
-              style={{ backgroundColor: colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 }}>
-              <Text style={[textStyles.body, { color: colors.text }]}>⚙️ Adjust</Text>
+              style={{ 
+                backgroundColor: (dimOn && dimLevel === 0.8) ? colors.primary : colors.surface, 
+                paddingVertical: 10, 
+                paddingHorizontal: 16, 
+                borderRadius: 12 
+              }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>🌑 Strong (80%)</Text>
             </Pressable>
           </View>
           
           {dimOn && (
-            <View style={{ marginTop: 8, backgroundColor: colors.surface, borderRadius: 12, padding: 12 }}>
-              <Text style={[textStyles.body, { color: colors.mutedText, fontSize: 12 }]}>
-                💡 Tip: Dimming reduces eye strain during migraine episodes. Tap "Adjust" for fine control.
+            <View style={{ marginTop: 12, backgroundColor: colors.surface, borderRadius: 12, padding: 12 }}>
+              <Text style={[textStyles.body, { color: colors.text, textAlign: 'center' }]}>
+                ✨ Dim mode active: {Math.round(dimLevel * 100)}% darker
+              </Text>
+              <Text style={[textStyles.body, { color: colors.mutedText, fontSize: 12, textAlign: 'center', marginTop: 4 }]}>
+                Reducing screen brightness for migraine comfort
               </Text>
             </View>
           )}
@@ -467,13 +473,21 @@ export default function MigraineScreen({ navigation }: Props) {
 
       </ScrollView>
 
-      <DimOverlay
-        visible={dimOn}
-        level={dimLevel}
-        onLevelChange={handleDimLevelChange}
-        onExit={() => setDimOn(false)}
-        reduceMotion={false}
-      />
+      {/* Simple dim overlay - no popup controls */}
+      {dimOn && (
+        <View 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'black',
+            opacity: dimLevel,
+            pointerEvents: 'none' // Allows touches to pass through
+          }}
+        />
+      )}
 
       <NowPlayingBar visible={!!meow} />
       {exerciseOpen && (
