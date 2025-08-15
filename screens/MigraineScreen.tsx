@@ -171,24 +171,66 @@ export default function MigraineScreen({ navigation }: Props) {
           <Text style={[textStyles.h2, { color: colors.text }]}>Sound</Text>
           <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>Tap to start/stop. Switch sounds crossfades.</Text>
           <View style={{ flexDirection:'row', gap:12, marginTop:8, flexWrap:'wrap' as const }}>
-            {(['brown','hum','rain','sadmeow'] as const).map(k => (
-              <Pressable key={k} onPress={async () => { 
-                console.log(`Selecting sound: ${k}`);
-                setSound(k); 
-                if (isPlaying) {
-                  try {
-                    await playOrCrossfade(k, 250);
-                  } catch (error) {
-                    console.error('Error switching audio:', error);
-                  }
+            <Pressable onPress={async () => { 
+              console.log('Selecting sound: brown');
+              setSound('brown'); 
+              if (isPlaying) {
+                try {
+                  await playOrCrossfade('brown', 250);
+                } catch (error) {
+                  console.error('Error switching audio:', error);
                 }
-              }}
-                style={{ backgroundColor: sound===k? colors.primary : colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
-                <Text style={[textStyles.body, { color: colors.text }]}>
-                  {k==='brown'?'Brown noise':k==='hum'?'Soft hum':k==='rain'?'Rain':k==='sadmeow'?'Mochi Meow':'Unknown'}
-                </Text>
-              </Pressable>
-            ))}
+              }
+            }}
+              style={{ backgroundColor: sound==='brown'? colors.primary : colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>Brown noise</Text>
+            </Pressable>
+            
+            <Pressable onPress={async () => { 
+              console.log('Selecting sound: hum');
+              setSound('hum'); 
+              if (isPlaying) {
+                try {
+                  await playOrCrossfade('hum', 250);
+                } catch (error) {
+                  console.error('Error switching audio:', error);
+                }
+              }
+            }}
+              style={{ backgroundColor: sound==='hum'? colors.primary : colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>Soft hum</Text>
+            </Pressable>
+            
+            <Pressable onPress={async () => { 
+              console.log('Selecting sound: rain');
+              setSound('rain'); 
+              if (isPlaying) {
+                try {
+                  await playOrCrossfade('rain', 250);
+                } catch (error) {
+                  console.error('Error switching audio:', error);
+                }
+              }
+            }}
+              style={{ backgroundColor: sound==='rain'? colors.primary : colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>Rain</Text>
+            </Pressable>
+            
+            <Pressable onPress={async () => { 
+              console.log('Selecting sound: sadmeow');
+              setSound('sadmeow'); 
+              if (isPlaying) {
+                try {
+                  await playOrCrossfade('sadmeow', 250);
+                } catch (error) {
+                  console.error('Error switching audio:', error);
+                }
+              }
+            }}
+              style={{ backgroundColor: sound==='sadmeow'? colors.primary : colors.surface, paddingVertical:8, paddingHorizontal:12, borderRadius:12 }}>
+              <Text style={[textStyles.body, { color: colors.text }]}>Mochi Meow</Text>
+            </Pressable>
+            
             <Pressable onPress={async () => {
               console.log('Play button clicked, isPlaying:', isPlaying, 'sound:', sound);
               try {
