@@ -3,7 +3,7 @@ import { View, Text, Pressable, Switch } from 'react-native';
 import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
-import { useKeepAwake } from 'expo-keep-awake';
+// import { useKeepAwake } from 'expo-keep-awake'; // Removed for web compatibility
 import { playLoop, stopAndUnload, playSong, resumeAll, stopAllSongs } from '../utils/audio';
 import { unlockAudio, playGoodnight } from '../utils/sfx';
 import { useSettings } from '../providers/SettingsProvider';
@@ -30,7 +30,7 @@ export default function SleepScreen({ navigation }: Props) {
     return () => { stopAndUnload(purr); stopAndUnload(anchor); };
   }, []);
 
-  useKeepAwake();
+  // useKeepAwake(); // Removed for web compatibility
 
   useEffect(() => {
     (async () => {
