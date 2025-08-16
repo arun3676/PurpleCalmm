@@ -20,6 +20,8 @@ export default function SleepScreen({ navigation }: Props) {
   const [purr, setPurr] = useState<Sound | any | null>(null);
   const [anchor, setAnchor] = useState<any | null>(null);
   const [holding, setHolding] = useState(false);
+  const [winterBearPlaying, setWinterBearPlaying] = useState(false);
+  const [winterBearSong, setWinterBearSong] = useState<any>(null);
 
   useEffect(() => {
     async function run() {
@@ -28,7 +30,11 @@ export default function SleepScreen({ navigation }: Props) {
       await success();
     }
     run();
-    return () => { stopAndUnload(purr); stopAndUnload(anchor); };
+    return () => { 
+      stopAndUnload(purr); 
+      stopAndUnload(anchor); 
+      stopAndUnload(winterBearSong);
+    };
   }, []);
 
   // useKeepAwake(); // Removed for web compatibility
@@ -62,6 +68,23 @@ export default function SleepScreen({ navigation }: Props) {
     } catch {}
   }
 
+  async function toggleWinterBear() {
+    await unlockAudio();
+    if (winterBearPlaying) {
+      await stopAndUnload(winterBearSong);
+      setWinterBearSong(null);
+      setWinterBearPlaying(false);
+    } else {
+      try {
+        const song = await playSong('winterbear', (masterVolume ?? 0.8) * 0.7, true);
+        setWinterBearSong(song);
+        setWinterBearPlaying(true);
+      } catch (error) {
+        console.log('Could not play winter bear song:', error);
+      }
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
       <CatBackButton onPress={() => navigation.goBack()} />
@@ -70,6 +93,27 @@ export default function SleepScreen({ navigation }: Props) {
         <Text style={[textStyles.h1, { color: colors.text }]}>Sleep</Text>
           <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 8 }]}>Wind-down and bedside mode</Text>
           {holding && <Text style={{ opacity: 0.7, marginTop: 8 }}>…purring…</Text>}
+      </View>
+
+      <View style={{ marginTop: 24 }}>
+        <Text style={[textStyles.h2, { color: colors.text }]}>Winter Bear 🐻❄️</Text>
+        <Text style={[textStyles.body, { color: colors.mutedText, marginTop: 4 }]}>V's gentle winter song for sleep</Text>
+        <Pressable
+          onPress={toggleWinterBear}
+          style={{ 
+            marginTop: 12, 
+            paddingVertical: 12, 
+            paddingHorizontal: 16, 
+            borderRadius: 14, 
+            backgroundColor: winterBearPlaying ? colors.primary : colors.surface,
+            borderWidth: 1,
+            borderColor: colors.primary
+          }}
+        >
+          <Text style={[textStyles.bodyMedium, { color: winterBearPlaying ? colors.background : colors.text, textAlign: 'center' }]}>
+            {winterBearPlaying ? '❄️ Playing Winter Bear 🐻' : '🎵 Play Winter Bear'}
+          </Text>
+        </Pressable>
       </View>
 
       <View style={{ marginTop: 24 }}>

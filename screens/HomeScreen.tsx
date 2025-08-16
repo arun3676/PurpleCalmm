@@ -12,7 +12,7 @@ import PawRow from '../components/PawRow';
 import CuddleAura from '../components/CuddleAura';
 import { calcJournalStreak, loadEntries, loadStickers } from '../utils/storage';
 import { selection } from '../utils/haptics';
-import { playLoop, stopAndUnload, resumeAll } from '../utils/audio';
+import { playLoop, stopAndUnload, resumeAll, playSong } from '../utils/audio';
 import type { Sound } from 'expo-av';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -24,6 +24,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [purr, setPurr] = useState<Sound | any | null>(null);
   const [stickers, setStickers] = useState<{ id: string; name: string; emoji: string; ts: number }[]>([]);
   const hugScale = useRef(new Animated.Value(1)).current;
+  const [winterBearSong, setWinterBearSong] = useState<any>(null);
+  const cuddleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -31,8 +33,12 @@ export default function HomeScreen({ navigation }: Props) {
       setStreak(calcJournalStreak(entries));
       setStickers(await loadStickers());
     })();
-    return () => { stopAndUnload(purr); };
-  }, [purr]);
+    return () => { 
+      stopAndUnload(purr); 
+      stopAndUnload(winterBearSong);
+      if (cuddleTimerRef.current) clearTimeout(cuddleTimerRef.current);
+    };
+  }, [purr, winterBearSong]);
 
   async function onCatPressIn() {
     setCuddling(true);
@@ -41,11 +47,30 @@ export default function HomeScreen({ navigation }: Props) {
     selection();
     const s = await playLoop('softpurr', 0.28);
     setPurr(s);
+    
+    // Start special winter_bear song after 3 seconds of cuddling ❄️🐻💜
+    cuddleTimerRef.current = setTimeout(async () => {
+      try {
+        const winterSong = await playSong('winterbear', 0.5, true);
+        setWinterBearSong(winterSong);
+      } catch (error) {
+        console.log('Could not play winter bear song:', error);
+      }
+    }, 3000);
   }
   async function onCatPressOut() {
     setCuddling(false);
     Animated.spring(hugScale, { toValue: 1, useNativeDriver: false, friction: 6, tension: 120 }).start();
+    
+    // Clear the timer and stop both sounds
+    if (cuddleTimerRef.current) {
+      clearTimeout(cuddleTimerRef.current);
+      cuddleTimerRef.current = null;
+    }
+    
     await stopAndUnload(purr);
+    await stopAndUnload(winterBearSong);
+    setWinterBearSong(null);
   }
 
   return (

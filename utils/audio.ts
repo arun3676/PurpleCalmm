@@ -2,12 +2,13 @@ import { Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import { Asset } from 'expo-asset';
 
-type SongName = 'goodnightko' | 'sadmeow' | 'softkitty';
+type SongName = 'goodnightko' | 'sadmeow' | 'softkitty' | 'winterbear';
 
 const sources: Record<SongName, any> = {
   goodnightko: require('../assets/goodnight_ko.mp3'),
   sadmeow: require('../assets/sad_meow.mp3'),
   softkitty: require('../assets/soft_kitty.mp3'),
+  winterbear: require('../assets/winter_bear.mp3'),
 };
 
 // --- Web AudioContext unlock helpers (no-op on native) ---

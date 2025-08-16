@@ -4,6 +4,7 @@ import { useAppTheme, textStyles } from '../theme/ThemeProvider';
 import Svg, { Path } from 'react-native-svg';
 import CatBackButton from '../components/CatBackButton';
 import { saveSticker } from '../utils/storage';
+import { playSong, stopAndUnload } from '../utils/audio';
 
 const PHASE = 4000; // 4s each
 type Phase = 'inhale'|'hold'|'exhale';
@@ -17,8 +18,16 @@ export default function CalmScreen({ navigation }: any) {
   const [earned, setEarned] = useState<string | null>(null);
   const scale = useRef(new Animated.Value(1)).current;
   const stopRef = useRef(false);
+  const [celebrationSong, setCelebrationSong] = useState<any>(null);
 
-  useEffect(() => { stopRef.current = false; run(); return () => { stopRef.current = true; }; }, []);
+  useEffect(() => { 
+    stopRef.current = false; 
+    run(); 
+    return () => { 
+      stopRef.current = true; 
+      stopAndUnload(celebrationSong);
+    }; 
+  }, []);
 
   async function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
   async function run() {
@@ -34,12 +43,26 @@ export default function CalmScreen({ navigation }: any) {
     Animated.timing(scale, { toValue: p==='inhale'?1.18:p==='exhale'?0.85:1, duration: PHASE, useNativeDriver: true }).start();
     for (let t = PHASE; t >= 0 && !stopRef.current; t -= 250) { setSec(Math.max(0, Math.ceil(t/1000))); await sleep(250); }
   }
-  function celebrateOnce() {
+  async function celebrateOnce() {
     setCelebrate(true);
     const s = { id: `${Date.now()}`, name: 'Calm Set', emoji: '🐱', ts: Date.now() };
     saveSticker(s).catch(() => {});
     setEarned('🐱 Calm Set');
-    setTimeout(() => { setCelebrate(false); setEarned(null); }, 1600);
+    
+    // Play winter_bear as celebration song ❄️🐻💜
+    try {
+      const song = await playSong('winterbear', 0.6, false);
+      setCelebrationSong(song);
+    } catch (error) {
+      console.log('Could not play celebration song:', error);
+    }
+    
+    setTimeout(() => { 
+      setCelebrate(false); 
+      setEarned(null);
+      stopAndUnload(celebrationSong);
+      setCelebrationSong(null);
+    }, 6000); // Extended to let the song play longer
   }
 
   const label = phase==='inhale'?'Inhale':phase==='hold'?'Hold':'Exhale';
