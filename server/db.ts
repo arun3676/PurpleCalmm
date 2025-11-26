@@ -12,7 +12,11 @@ import {
   breathingSessions,
   InsertBreathingSession,
   chatMessages,
-  InsertChatMessage
+  InsertChatMessage,
+  btsJournal,
+  InsertBtsJournalEntry,
+  weightTracking,
+  InsertWeightEntry
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -196,4 +200,42 @@ export async function clearUserChatHistory(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+}
+
+// BTS Journal queries
+export async function createBtsJournalEntry(entry: InsertBtsJournalEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(btsJournal).values(entry);
+}
+
+export async function getBtsJournalEntries(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(btsJournal).where(eq(btsJournal.userId, userId)).orderBy(desc(btsJournal.createdAt));
+}
+
+export async function deleteBtsJournalEntry(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(btsJournal).where(eq(btsJournal.id, id));
+}
+
+// Weight tracking queries
+export async function createWeightEntry(entry: InsertWeightEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(weightTracking).values(entry);
+}
+
+export async function getWeightEntries(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(weightTracking).where(eq(weightTracking.userId, userId)).orderBy(desc(weightTracking.createdAt));
+}
+
+export async function deleteWeightEntry(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(weightTracking).where(eq(weightTracking.id, id));
 }

@@ -10,6 +10,7 @@ import Sleep from "./pages/Sleep";
 import Migraine from "./pages/Migraine";
 import Journal from "./pages/Journal";
 import JournalTrends from "./pages/JournalTrends";
+import MyJourneys from "./pages/MyJourneys";
 import CatChat from "./pages/CatChat";
 import Settings from "./pages/Settings";
 
@@ -22,6 +23,7 @@ function Router() {
       <Route path={"/migraine"} component={Migraine} />
       <Route path={"/journal"} component={Journal} />
       <Route path={"/journal-trends"} component={JournalTrends} />
+      <Route path={"/my-journeys"} component={MyJourneys} />
       <Route path={"/chat"} component={CatChat} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/404"} component={NotFound} />

@@ -98,6 +98,13 @@ export default function Home() {
       href: "/chat",
       color: "from-orange-500 to-amber-500",
     },
+    {
+      title: "My Journeys 💜",
+      description: "BTS Army journal & weight gain tracker",
+      icon: Heart,
+      href: "/my-journeys",
+      color: "from-purple-500 to-pink-500",
+    },
   ];
 
   return (

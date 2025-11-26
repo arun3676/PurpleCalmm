@@ -243,6 +243,73 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+
+  btsJournal: router({
+
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getBtsJournalEntries } = await import('./db');
+      return getBtsJournalEntries(ctx.user.id);
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        quote: z.string(),
+        member: z.string().optional(),
+        reflection: z.string().optional(),
+        mood: z.enum(["very_bad", "bad", "neutral", "good", "very_good"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createBtsJournalEntry } = await import('./db');
+        await createBtsJournalEntry({
+          userId: ctx.user.id,
+          quote: input.quote,
+          member: input.member,
+          reflection: input.reflection,
+          mood: input.mood,
+        });
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { deleteBtsJournalEntry } = await import('./db');
+        await deleteBtsJournalEntry(input.id);
+        return { success: true };
+      }),
+  }),
+
+  weight: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getWeightEntries } = await import('./db');
+      return getWeightEntries(ctx.user.id);
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        weight: z.number(),
+        unit: z.enum(["kg", "lbs"]),
+        goalWeight: z.number().optional(),
+        notes: z.string().optional(),
+        photoUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createWeightEntry } = await import('./db');
+        await createWeightEntry({
+          userId: ctx.user.id,
+          weight: input.weight,
+          unit: input.unit,
+          goalWeight: input.goalWeight,
+          notes: input.notes,
+          photoUrl: input.photoUrl,
+        });
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { deleteWeightEntry } = await import('./db');
+        await deleteWeightEntry(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

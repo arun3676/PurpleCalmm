@@ -25,8 +25,39 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// BTS Army Journal - daily BTS quotes
+export const btsJournal = mysqlTable("bts_journal", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  quote: text("quote").notNull(),
+  member: varchar("member", { length: 50 }), // RM, Jin, Suga, J-Hope, Jimin, V, Jungkook
+  reflection: text("reflection"), // User's thoughts on the quote
+  mood: mysqlEnum("mood", ["very_bad", "bad", "neutral", "good", "very_good"]),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BtsJournalEntry = typeof btsJournal.$inferSelect;
+export type InsertBtsJournalEntry = typeof btsJournal.$inferInsert;
+
+// Weight Gain Journey Tracker
+export const weightTracking = mysqlTable("weight_tracking", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  weight: int("weight").notNull(), // Weight in kg or lbs (stored as integer)
+  unit: mysqlEnum("unit", ["kg", "lbs"]).default("kg").notNull(),
+  goalWeight: int("goalWeight"), // Target weight
+  notes: text("notes"), // How they're feeling, what they ate, etc.
+  photoUrl: text("photoUrl"), // Progress photo
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WeightEntry = typeof weightTracking.$inferSelect;
+export type InsertWeightEntry = typeof weightTracking.$inferInsert;
+
+// TODO: Add your tables here
+
 /**
- * Journal entries for tracking thoughts and feelings
+ * Journal entries table for tracking thoughts and feelings
  */
 export const journalEntries = mysqlTable("journal_entries", {
   id: int("id").autoincrement().primaryKey(),

@@ -54,3 +54,20 @@
 
 ## Bug Fixes
 - [x] Fix audio loading error on sleep page - replace external CDN with reliable audio solution
+
+## Mobile Enhancements
+- [x] Apply mobile-first design from EnhanceThemedAppDesign.zip
+- [x] Optimize all pages for mobile viewport
+- [x] Improve touch targets and spacing for mobile
+- [x] Add mobile-friendly navigation
+
+## Cat Chat Improvements
+- [x] Fix glitchy behavior in cat chat
+- [x] Improve chat UX for mobile
+- [x] Add better loading states
+- [x] Optimize message rendering
+
+## New Features
+- [x] Add BTS Army journal page for daily quotes
+- [x] Add weight gain journey tracker
+- [x] Integrate both journals into a combined page
