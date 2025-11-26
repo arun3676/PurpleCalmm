@@ -11,7 +11,7 @@ import Migraine from "./pages/Migraine";
 import Journal from "./pages/Journal";
 import JournalTrends from "./pages/JournalTrends";
 import MyJourneys from "./pages/MyJourneys";
-import CatChat from "./pages/CatChat";
+import CatChat from "./pages/NewCatChat";
 import Settings from "./pages/Settings";
 
 function Router() {

@@ -13,10 +13,10 @@ export function InteractiveCat({ journalStreak }: InteractiveCatProps) {
   const [isPressing, setIsPressing] = useState(false);
 
   const catMoods = {
-    happy: { face: '😺', color: 'from-purple-400 to-purple-500', message: 'Mochi is happy!' },
-    sleepy: { face: '😴', color: 'from-indigo-400 to-indigo-500', message: 'Mochi is sleepy...' },
-    playful: { face: '😸', color: 'from-pink-400 to-pink-500', message: 'Mochi wants to play!' },
-    loving: { face: '😻', color: 'from-purple-500 to-pink-500', message: 'Mochi loves you!' },
+    happy: { face: '😺', color: 'from-purple-400 to-purple-500', message: 'Rani is happy!' },
+    sleepy: { face: '😴', color: 'from-indigo-400 to-indigo-500', message: 'Rani is sleepy...' },
+    playful: { face: '😸', color: 'from-pink-400 to-pink-500', message: 'Rani wants to play!' },
+    loving: { face: '😻', color: 'from-purple-500 to-pink-500', message: 'Rani loves you!' },
   };
 
   const handleCatPress = () => {
@@ -98,7 +98,7 @@ export function InteractiveCat({ journalStreak }: InteractiveCatProps) {
         <div>
           <p className="text-purple-700">{currentMood.message}</p>
           <p className="text-sm text-gray-600 mt-1">
-            Tap & hold Mochi to give cuddles
+            Tap & hold Rani to give cuddles
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export function InteractiveCat({ journalStreak }: InteractiveCatProps) {
               </motion.div>
             )}
             {cuddles < 5 && (
-              <p className="text-sm text-gray-500">Give Mochi 5 cuddles to unlock stickers!</p>
+              <p className="text-sm text-gray-500">Give Rani 5 cuddles to unlock stickers!</p>
             )}
           </div>
         </div>

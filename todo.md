@@ -89,3 +89,13 @@
 - [x] Play goodnight_ko.mp3 when goodnight cat is pressed
 - [x] Add Winter Bear and Soft Kitty as sleep sound options
 - [x] Update sleep support page with new audio files
+
+## Cat Companion Fixes
+- [x] Rename "Mochi" to "Rani" throughout entire app
+- [x] Fix cat companion page layout and alignment issues
+- [x] Redesign chat page to match uploaded design with clean layout
+- [x] Add "Rani the Cat" title with cat emoji
+- [x] Add "A gentle place to talk" subtitle
+- [x] Implement purple message bubble design from image
+- [x] Add Back button and Reset button to chat page
+- [x] Update home page card for "Chat with Rani" with purple gradient

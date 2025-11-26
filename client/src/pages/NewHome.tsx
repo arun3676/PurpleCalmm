@@ -42,10 +42,10 @@ function InteractiveCat({ journalStreak }: { journalStreak: number }) {
   const [isPressing, setIsPressing] = useState(false);
 
   const catMoods = {
-    happy: { face: '😺', color: 'from-purple-400 to-purple-500', message: 'Mochi is happy!' },
-    sleepy: { face: '😴', color: 'from-indigo-400 to-indigo-500', message: 'Mochi is sleepy...' },
-    playful: { face: '😸', color: 'from-pink-400 to-pink-500', message: 'Mochi wants to play!' },
-    loving: { face: '😻', color: 'from-purple-500 to-pink-500', message: 'Mochi loves you!' },
+    happy: { face: '😺', color: 'from-purple-400 to-purple-500', message: 'Rani is happy!' },
+    sleepy: { face: '😴', color: 'from-indigo-400 to-indigo-500', message: 'Rani is sleepy...' },
+    playful: { face: '😸', color: 'from-pink-400 to-pink-500', message: 'Rani wants to play!' },
+    loving: { face: '😻', color: 'from-purple-500 to-pink-500', message: 'Rani loves you!' },
   };
 
   const handleCatPress = () => {
@@ -122,7 +122,7 @@ function InteractiveCat({ journalStreak }: { journalStreak: number }) {
         <div>
           <p className="text-purple-700 font-medium">{currentMood.message}</p>
           <p className="text-sm text-gray-600 mt-1">
-            Tap & hold Mochi to give cuddles
+            Tap & hold Rani to give cuddles
           </p>
         </div>
 
@@ -162,7 +162,7 @@ function InteractiveCat({ journalStreak }: { journalStreak: number }) {
               </motion.div>
             ) : null}
             {cuddles < 5 && (
-              <p className="text-sm text-gray-500">Give Mochi 5 cuddles to unlock stickers!</p>
+              <p className="text-sm text-gray-500">Give Rani 5 cuddles to unlock stickers!</p>
             )}
           </div>
         </div>
@@ -316,14 +316,12 @@ export default function NewHome() {
 
         {/* Cat Chat Link */}
         <Link href="/chat">
-          <div className="bg-gradient-to-br from-orange-100 to-amber-100 rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all cursor-pointer border-2 border-orange-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-orange-700 font-medium">Cat Companion</h3>
-                <p className="text-sm text-orange-600">Chat with your AI friend</p>
-              </div>
-              <span className="text-3xl">🐱</span>
+          <div className="bg-gradient-to-r from-purple-400 to-purple-500 rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all cursor-pointer">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-3xl">😺</span>
+              <h3 className="text-white font-medium text-lg">Chat with Rani</h3>
             </div>
+            <p className="text-white/90">A gentle place to talk and share</p>
           </div>
         </Link>
       </main>

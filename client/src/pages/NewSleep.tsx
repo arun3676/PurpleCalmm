@@ -117,7 +117,7 @@ export default function NewSleep() {
           <CardContent className="space-y-4">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-4">
-                Press and hold Mochi to hear a special goodnight message
+                Press and hold Rani to hear a special goodnight message
               </p>
               
               <div className="relative inline-block">
