@@ -1,6 +1,19 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { 
+  InsertUser, 
+  users,
+  journalEntries,
+  InsertJournalEntry,
+  migraineLogs,
+  InsertMigraineLog,
+  sleepSessions,
+  InsertSleepSession,
+  breathingSessions,
+  InsertBreathingSession,
+  chatMessages,
+  InsertChatMessage
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +102,98 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Journal queries
+export async function createJournalEntry(entry: InsertJournalEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(journalEntries).values(entry);
+  return result;
+}
+
+export async function getUserJournalEntries(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(journalEntries).where(eq(journalEntries.userId, userId)).orderBy(desc(journalEntries.createdAt)).limit(limit);
+}
+
+export async function updateJournalEntry(id: number, userId: number, data: Partial<InsertJournalEntry>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(journalEntries).set(data).where(and(eq(journalEntries.id, id), eq(journalEntries.userId, userId)));
+}
+
+export async function deleteJournalEntry(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(journalEntries).where(and(eq(journalEntries.id, id), eq(journalEntries.userId, userId)));
+}
+
+// Migraine queries
+export async function createMigraineLog(log: InsertMigraineLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(migraineLogs).values(log);
+}
+
+export async function getUserMigraineLogs(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(migraineLogs).where(eq(migraineLogs.userId, userId)).orderBy(desc(migraineLogs.startTime)).limit(limit);
+}
+
+export async function updateMigraineLog(id: number, userId: number, data: Partial<InsertMigraineLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(migraineLogs).set(data).where(and(eq(migraineLogs.id, id), eq(migraineLogs.userId, userId)));
+}
+
+export async function deleteMigraineLog(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(migraineLogs).where(and(eq(migraineLogs.id, id), eq(migraineLogs.userId, userId)));
+}
+
+// Sleep session queries
+export async function createSleepSession(session: InsertSleepSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(sleepSessions).values(session);
+}
+
+export async function getUserSleepSessions(userId: number, limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sleepSessions).where(eq(sleepSessions.userId, userId)).orderBy(desc(sleepSessions.startTime)).limit(limit);
+}
+
+// Breathing session queries
+export async function createBreathingSession(session: InsertBreathingSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(breathingSessions).values(session);
+}
+
+export async function getUserBreathingSessions(userId: number, limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(breathingSessions).where(eq(breathingSessions.userId, userId)).orderBy(desc(breathingSessions.createdAt)).limit(limit);
+}
+
+// Chat message queries
+export async function createChatMessage(message: InsertChatMessage) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(chatMessages).values(message);
+}
+
+export async function getUserChatMessages(userId: number, limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(chatMessages).where(eq(chatMessages.userId, userId)).orderBy(chatMessages.createdAt).limit(limit);
+}
+
+export async function clearUserChatHistory(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+}
