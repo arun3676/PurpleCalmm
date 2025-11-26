@@ -12,8 +12,7 @@ type SoundOption = {
   name: string;
   description: string;
   emoji: string;
-  // Using free ambient sound URLs
-  url: string;
+  type: 'white-noise' | 'pink-noise' | 'brown-noise' | 'nature';
 };
 
 const sounds: SoundOption[] = [
@@ -22,43 +21,120 @@ const sounds: SoundOption[] = [
     name: "Gentle Rain",
     description: "Soft rainfall for peaceful sleep",
     emoji: "🌧️",
-    url: "https://cdn.pixabay.com/audio/2022/05/13/audio_257112ce99.mp3",
+    type: "pink-noise",
   },
   {
     id: "ocean",
     name: "Ocean Waves",
     description: "Calming waves on the shore",
     emoji: "🌊",
-    url: "https://cdn.pixabay.com/audio/2022/03/10/audio_4dedf3f94c.mp3",
+    type: "brown-noise",
   },
   {
     id: "forest",
     name: "Forest Ambience",
     description: "Birds and nature sounds",
     emoji: "🌲",
-    url: "https://cdn.pixabay.com/audio/2022/03/15/audio_13c0f7d03e.mp3",
+    type: "nature",
   },
   {
     id: "white-noise",
     name: "White Noise",
     description: "Consistent background sound",
     emoji: "📻",
-    url: "https://cdn.pixabay.com/audio/2023/10/30/audio_24ee4bc3f4.mp3",
+    type: "white-noise",
   },
 ];
+
+// Generate audio using Web Audio API
+function createAudioContext(type: string, volume: number): { context: AudioContext; gainNode: GainNode; stop: () => void } | null {
+  try {
+    const audioContext = new AudioContext();
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = volume;
+    gainNode.connect(audioContext.destination);
+
+    let oscillator: OscillatorNode | null = null;
+    let noiseSource: AudioBufferSourceNode | null = null;
+
+    if (type === 'white-noise' || type === 'pink-noise' || type === 'brown-noise') {
+      const bufferSize = audioContext.sampleRate * 2;
+      const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      if (type === 'white-noise') {
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+      } else if (type === 'pink-noise') {
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          b3 = 0.86650 * b3 + white * 0.3104856;
+          b4 = 0.55000 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.0168980;
+          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+          b6 = white * 0.115926;
+        }
+      } else if (type === 'brown-noise') {
+        let lastOut = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          data[i] = (lastOut + (0.02 * white)) / 1.02;
+          lastOut = data[i];
+          data[i] *= 3.5;
+        }
+      }
+
+      noiseSource = audioContext.createBufferSource();
+      noiseSource.buffer = buffer;
+      noiseSource.loop = true;
+      noiseSource.connect(gainNode);
+      noiseSource.start();
+    } else if (type === 'nature') {
+      // Create a nature-like sound with multiple oscillators
+      const frequencies = [220, 330, 440, 550];
+      frequencies.forEach(freq => {
+        const osc = audioContext.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq + (Math.random() * 20 - 10);
+        const oscGain = audioContext.createGain();
+        oscGain.gain.value = 0.05;
+        osc.connect(oscGain);
+        oscGain.connect(gainNode);
+        osc.start();
+      });
+    }
+
+    return {
+      context: audioContext,
+      gainNode,
+      stop: () => {
+        if (noiseSource) noiseSource.stop();
+        audioContext.close();
+      },
+    };
+  } catch (error) {
+    console.error('Failed to create audio context:', error);
+    return null;
+  }
+}
 
 export default function Sleep() {
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([70]);
   const [startTime, setStartTime] = useState<Date | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<{ context: AudioContext; gainNode: GainNode; stop: () => void } | null>(null);
 
   const createSession = trpc.sleep.create.useMutation();
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume[0] / 100;
+    if (audioContextRef.current?.gainNode) {
+      audioContextRef.current.gainNode.gain.value = volume[0] / 100;
     }
   }, [volume]);
 
@@ -78,32 +154,32 @@ export default function Sleep() {
     const sound = sounds.find((s) => s.id === selectedSound);
     if (!sound) return;
 
-    if (!audioRef.current) {
-      audioRef.current = new Audio(sound.url);
-      audioRef.current.loop = true;
-      audioRef.current.volume = volume[0] / 100;
+    if (audioContextRef.current) {
+      audioContextRef.current.stop();
     }
 
-    audioRef.current.play().catch((error) => {
+    const audioSetup = createAudioContext(sound.type, volume[0] / 100);
+    if (!audioSetup) {
       toast.error("Failed to play sound");
-      console.error(error);
-    });
+      return;
+    }
 
+    audioContextRef.current = audioSetup;
     setIsPlaying(true);
     setStartTime(new Date());
   };
 
   const handlePause = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (audioContextRef.current) {
+      audioContextRef.current.context.suspend();
     }
     setIsPlaying(false);
   };
 
   const handleStop = async () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (audioContextRef.current) {
+      audioContextRef.current.stop();
+      audioContextRef.current = null;
     }
 
     if (startTime && selectedSound) {
@@ -129,9 +205,9 @@ export default function Sleep() {
 
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      if (audioContextRef.current) {
+        audioContextRef.current.stop();
+        audioContextRef.current = null;
       }
     };
   }, []);

@@ -50,4 +50,7 @@
 ## Testing & Deployment
 - [x] Write vitest tests for key procedures
 - [x] Test mobile responsiveness
-- [ ] Create deployment checkpoint
+- [x] Create deployment checkpoint
+
+## Bug Fixes
+- [x] Fix audio loading error on sleep page - replace external CDN with reliable audio solution
