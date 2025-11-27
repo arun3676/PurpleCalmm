@@ -175,3 +175,8 @@
 - [x] Ensure dark mode CSS variables are properly defined
 - [x] Enable switchable prop in ThemeProvider
 - [x] Test theme toggle actually changes appearance
+
+## GitHub Deployment
+- [ ] Push code to GitHub repository PurpleCalmm
+- [ ] Replace old code with new version
+- [ ] Verify push was successful
