@@ -62,7 +62,26 @@ export default function MoodTracker() {
     entries.unshift(newEntry);
     localStorage.setItem("mood_entries", JSON.stringify(entries));
 
-    toast.success("Mood logged! 💜");
+    // Show inspirational quote based on mood
+    const quotes = {
+      amazing: ["✨ You're shining bright! Keep that energy! - BTS",
+                "🌟 'Life is a sculpture that you cast as you make mistakes' - RM"],
+      happy: ["💜 'Even when this rain stops, when clouds go away, I stand here, just the same' - Spring Day",
+              "🌈 'Hope you can be your light' - Suga"],
+      okay: ["🌸 'It's alright to stop, there's no need to run without knowing why' - Paradise",
+             "💫 'Even the dark night will end and the sun will rise' - Tomorrow"],
+      sad: ["🫂 'You're gonna be happy, I'm your hope, you're my hope' - J-Hope",
+            "💙 'Don't worry, love. None of this is a coincidence' - DNA"],
+      anxious: ["🌙 'Breathe, it's okay to not be okay' - Jungkook",
+                "🕊️ 'Let's fly with our beautiful wings' - Fly to My Room"],
+      angry: ["🔥 'Use your anger, but don't let it use you' - Jin",
+              "💪 'I'm the one I should love in this world' - Epiphany"]
+    };
+    
+    const moodQuotes = quotes[selectedMood.value as keyof typeof quotes] || quotes.happy;
+    const randomQuote = moodQuotes[Math.floor(Math.random() * moodQuotes.length)];
+    
+    toast.success(randomQuote!, { duration: 5000 });
     setSelectedMood(null);
     setNote("");
     loadMoods();

@@ -139,3 +139,16 @@
 - [x] Fix missing /mood route (404 error)
 - [x] Create mood tracking page
 - [x] Add route to App.tsx
+
+## Mood Tracker Improvements
+- [x] Add inspirational quote/song lyric when saving mood
+- [x] Show motivational message after mood is logged
+
+## Weight Gain Challenge Redesign
+- [x] Convert weight tracker to goal-oriented challenge system
+- [x] Add goal setting (target weight, deadline)
+- [x] Add progress bar showing percentage complete
+- [x] Show days remaining and weight left to gain
+- [x] Add daily check-in with weight and notes
+- [x] Add milestone celebrations (25%, 50%, 75%, 100%)
+- [x] Make it motivating and useful for 45-day challenges
