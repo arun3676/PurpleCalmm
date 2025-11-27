@@ -9,6 +9,7 @@ import Calm from "./pages/Calm";
 import Sleep from "./pages/NewSleep";
 import Migraine from "./pages/Migraine";
 import LocalJournal from "./pages/LocalJournal";
+import MoodTracker from "./pages/MoodTracker";
 import JournalTrends from "./pages/JournalTrends";
 import MyJourneys from "./pages/MyJourneys";
 import LocalCatChat from "./pages/LocalCatChat";
@@ -22,6 +23,7 @@ function Router() {
       <Route path={"/sleep"} component={Sleep} />
       <Route path={"/migraine"} component={Migraine} />
       <Route path={"/journal"} component={LocalJournal} />
+      <Route path={"/mood"} component={MoodTracker} />
       <Route path={"/journal-trends"} component={JournalTrends} />
       <Route path={"/my-journeys"} component={MyJourneys} />
       <Route path={"/chat"} component={LocalCatChat} />

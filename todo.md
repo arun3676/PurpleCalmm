@@ -134,3 +134,8 @@
 - [x] Add inspirational quote at bottom
 - [x] Match the clean design from uploaded image
 - [x] Remove test/debug UI elements
+
+## Bug Fixes
+- [x] Fix missing /mood route (404 error)
+- [x] Create mood tracking page
+- [x] Add route to App.tsx
