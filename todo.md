@@ -187,3 +187,5 @@
 - [x] Ensure Vite build works correctly
 - [ ] Push fixes to GitHub
 - [ ] Verify Vercel deployment succeeds
+
+- [x] Fix Vercel build command - run from root directory instead of client subdirectory
