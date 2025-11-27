@@ -163,3 +163,9 @@
 - [x] Integrate new Weight Challenge into tab instead of separate page
 - [x] Add back button to all pages that don't have one
 - [x] Ensure consistent navigation across all pages
+
+## UI Cleanup
+- [x] Remove all account/login UI elements from all pages
+- [x] Remove settings link from home page
+- [x] Add dark mode toggle switch at top of home screen
+- [x] Implement dark mode theme switching

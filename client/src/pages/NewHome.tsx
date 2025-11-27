@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, Star, Menu } from "lucide-react";
+import { Heart, Star, Moon, Sun } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useTheme } from "@/contexts/ThemeContext";
 import { getJournalStreak, getCuddlesCount, incrementCuddles, resetDailyCuddles } from "@/lib/localStorage";
 
 // BTS Quotes Component
@@ -228,6 +229,7 @@ function BottomNav({ activeTab }: { activeTab: string }) {
 export default function NewHome() {
   const [location] = useLocation();
   const [journalStreak, setJournalStreak] = useState(0);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     // Get journal streak from localStorage
@@ -245,11 +247,17 @@ export default function NewHome() {
             </h1>
             <p className="text-purple-600 text-sm">Your cozy cat comfort space</p>
           </div>
-          <Link href="/settings">
-            <button className="p-2 hover:bg-purple-100 rounded-full transition-colors">
-              <Menu className="w-6 h-6 text-purple-600" />
-            </button>
-          </Link>
+          <button 
+            onClick={toggleTheme}
+            className="p-2 hover:bg-purple-100 rounded-full transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-6 h-6 text-purple-600" />
+            ) : (
+              <Moon className="w-6 h-6 text-purple-600" />
+            )}
+          </button>
         </div>
       </header>
 
