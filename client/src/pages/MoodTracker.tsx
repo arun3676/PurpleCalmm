@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 interface MoodEntry {
@@ -90,6 +91,13 @@ export default function MoodTracker() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-purple-50 to-pink-50 pb-24">
       <div className="max-w-md mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="mb-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </Link>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

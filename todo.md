@@ -157,3 +157,9 @@
 - [x] Replace old weight tracker in My Journeys with link to new Weight Challenge
 - [x] Add Weight Challenge card to My Journeys page
 - [x] Remove old weight tracking UI with graphs and notes
+
+## UI Navigation Fixes
+- [x] Restore side-by-side tabs layout in My Journeys (BTS Army | Weight Journey)
+- [x] Integrate new Weight Challenge into tab instead of separate page
+- [x] Add back button to all pages that don't have one
+- [x] Ensure consistent navigation across all pages

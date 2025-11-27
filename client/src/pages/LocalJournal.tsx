@@ -4,6 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 import { getJournalStreak, saveJournalEntry } from "@/lib/localStorage";
 
 const dailyPrompts = [
@@ -53,6 +55,13 @@ export default function LocalJournal() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-purple-50 to-pink-50 pb-24">
       <div className="max-w-md mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="mb-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </Link>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
