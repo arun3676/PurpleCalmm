@@ -169,3 +169,9 @@
 - [x] Remove settings link from home page
 - [x] Add dark mode toggle switch at top of home screen
 - [x] Implement dark mode theme switching
+
+## Dark Mode Functionality Fix
+- [x] Check ThemeContext implementation
+- [x] Ensure dark mode CSS variables are properly defined
+- [x] Enable switchable prop in ThemeProvider
+- [x] Test theme toggle actually changes appearance
