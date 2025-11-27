@@ -118,3 +118,19 @@
 - [x] Eliminate meta-commentary and refinement notes
 - [x] Ensure only final, clean responses are shown
 - [x] Add strict instructions to prevent reasoning steps in output
+
+## Convert to Local-Only App
+- [x] Remove authentication requirement
+- [x] Convert all data storage to localStorage
+- [x] Remove login/logout UI elements
+- [x] Make chat history local-only
+- [x] Make journal entries local-only
+- [x] Make all features work without database
+
+## Journal Page Redesign
+- [x] Add streak counter display (e.g., "2 Day Streak!")
+- [x] Add daily writing prompts with heart icon
+- [x] Add large text area for journal entry
+- [x] Add inspirational quote at bottom
+- [x] Match the clean design from uploaded image
+- [x] Remove test/debug UI elements

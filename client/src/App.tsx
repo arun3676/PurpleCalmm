@@ -8,10 +8,10 @@ import Home from "./pages/NewHome";
 import Calm from "./pages/Calm";
 import Sleep from "./pages/NewSleep";
 import Migraine from "./pages/Migraine";
-import Journal from "./pages/Journal";
+import LocalJournal from "./pages/LocalJournal";
 import JournalTrends from "./pages/JournalTrends";
 import MyJourneys from "./pages/MyJourneys";
-import CatChat from "./pages/NewCatChat";
+import LocalCatChat from "./pages/LocalCatChat";
 import Settings from "./pages/Settings";
 
 function Router() {
@@ -21,10 +21,10 @@ function Router() {
       <Route path={"/calm"} component={Calm} />
       <Route path={"/sleep"} component={Sleep} />
       <Route path={"/migraine"} component={Migraine} />
-      <Route path={"/journal"} component={Journal} />
+      <Route path={"/journal"} component={LocalJournal} />
       <Route path={"/journal-trends"} component={JournalTrends} />
       <Route path={"/my-journeys"} component={MyJourneys} />
-      <Route path={"/chat"} component={CatChat} />
+      <Route path={"/chat"} component={LocalCatChat} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

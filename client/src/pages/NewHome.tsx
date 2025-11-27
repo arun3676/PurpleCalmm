@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Heart, Star, Menu } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { trpc } from "@/lib/trpc";
+import { getJournalStreak, getCuddlesCount, incrementCuddles, resetDailyCuddles } from "@/lib/localStorage";
 
 // BTS Quotes Component
 function BTSQuote() {
@@ -37,7 +37,10 @@ function BTSQuote() {
 // Interactive Cat Component
 function InteractiveCat({ journalStreak }: { journalStreak: number }) {
   const [mood, setMood] = useState<'happy' | 'sleepy' | 'playful' | 'loving'>('happy');
-  const [cuddles, setCuddles] = useState(0);
+  const [cuddles, setCuddles] = useState(() => {
+    resetDailyCuddles();
+    return getCuddlesCount();
+  });
   const [showHearts, setShowHearts] = useState(false);
   const [isPressing, setIsPressing] = useState(false);
 
@@ -51,7 +54,8 @@ function InteractiveCat({ journalStreak }: { journalStreak: number }) {
   const handleCatPress = () => {
     setIsPressing(true);
     setShowHearts(true);
-    setCuddles(prev => prev + 1);
+    const newCount = incrementCuddles();
+    setCuddles(newCount);
     setMood('loving');
     setTimeout(() => setShowHearts(false), 1000);
   };
@@ -225,25 +229,10 @@ export default function NewHome() {
   const [location] = useLocation();
   const [journalStreak, setJournalStreak] = useState(0);
 
-  const { data: journalEntries } = trpc.journal.list.useQuery();
-
   useEffect(() => {
-    if (journalEntries && journalEntries.length > 0) {
-      // Calculate streak
-      const today = new Date();
-      let streak = 0;
-      for (let i = 0; i < journalEntries.length; i++) {
-        const entryDate = new Date(journalEntries[i].createdAt);
-        const daysDiff = Math.floor((today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysDiff === i) {
-          streak++;
-        } else {
-          break;
-        }
-      }
-      setJournalStreak(streak);
-    }
-  }, [journalEntries]);
+    // Get journal streak from localStorage
+    setJournalStreak(getJournalStreak());
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-purple-50 to-pink-50 pb-20">
