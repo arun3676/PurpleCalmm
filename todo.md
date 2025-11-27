@@ -99,3 +99,11 @@
 - [x] Implement purple message bubble design from image
 - [x] Add Back button and Reset button to chat page
 - [x] Update home page card for "Chat with Rani" with purple gradient
+
+## Rani Personality Modes
+- [x] Add personality mode selector to chat interface
+- [x] Create three modes: Comforting (💜), Funny (😹), Playfully Rude (😼)
+- [x] Add small icons for mode selection
+- [x] Update chat system prompt based on selected mode
+- [x] Store user's preferred mode in database
+- [x] Add visual indicator showing current active mode

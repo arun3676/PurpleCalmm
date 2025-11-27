@@ -9,14 +9,42 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import { useAuth } from "@/_core/hooks/useAuth";
+
+type PersonalityMode = "comforting" | "funny" | "rude";
 
 export default function NewCatChat() {
+  const { user } = useAuth();
   const [message, setMessage] = useState("");
+  const [selectedMode, setSelectedMode] = useState<PersonalityMode>(user?.chatPersonality || "comforting");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: messages, refetch } = trpc.chat.history.useQuery();
   const sendMessage = trpc.chat.send.useMutation();
   const clearHistory = trpc.chat.clear.useMutation();
+  const setPersonality = trpc.auth.setPersonality.useMutation();
+  
+  const personalityModes = [
+    { mode: "comforting" as const, icon: "💜", label: "Comforting", description: "Warm & supportive" },
+    { mode: "funny" as const, icon: "😹", label: "Funny", description: "Playful & humorous" },
+    { mode: "rude" as const, icon: "😼", label: "Sassy", description: "Playfully rude" },
+  ];
+  
+  useEffect(() => {
+    if (user?.chatPersonality) {
+      setSelectedMode(user.chatPersonality);
+    }
+  }, [user]);
+  
+  const handleModeChange = async (mode: PersonalityMode) => {
+    setSelectedMode(mode);
+    try {
+      await setPersonality.mutateAsync({ personality: mode });
+      toast.success(`Rani is now ${mode}!`);
+    } catch (error) {
+      toast.error("Failed to change personality");
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -79,6 +107,29 @@ export default function NewCatChat() {
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
+          </div>
+          
+          {/* Personality Mode Selector */}
+          <div className="bg-purple-50 rounded-2xl p-3">
+            <p className="text-xs text-purple-700 mb-2 text-center font-medium">Rani's Mood</p>
+            <div className="flex gap-2 justify-center">
+              {personalityModes.map((mode) => (
+                <motion.button
+                  key={mode.mode}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleModeChange(mode.mode)}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
+                    selectedMode === mode.mode
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg'
+                      : 'bg-white text-gray-700 hover:bg-purple-100'
+                  }`}
+                >
+                  <span className="text-2xl">{mode.icon}</span>
+                  <span className="text-xs font-medium">{mode.label}</span>
+                </motion.button>
+              ))}
+            </div>
           </div>
         </div>
       </header>

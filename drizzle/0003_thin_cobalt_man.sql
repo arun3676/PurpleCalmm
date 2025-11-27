@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `chatPersonality` enum('comforting','funny','rude') DEFAULT 'comforting' NOT NULL;

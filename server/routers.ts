@@ -16,6 +16,23 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+    setPersonality: protectedProcedure
+      .input(z.object({
+        personality: z.enum(["comforting", "funny", "rude"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getDb } = await import('./db');
+        const { users } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+        
+        await db.update(users)
+          .set({ chatPersonality: input.personality })
+          .where(eq(users.id, ctx.user.id));
+        
+        return { success: true };
+      }),
   }),
 
   journal: router({
@@ -214,12 +231,21 @@ export const appRouter = router({
           content: msg.content,
         }));
         
-        // Get AI response with cat personality
+        // Get personality-based system prompt
+        const personalityPrompts = {
+          comforting: 'You are Rani, a supportive and empathetic AI cat companion helping someone with anxiety, depression, and migraines. Be warm, gentle, understanding, and nurturing like a caring friend. Offer comfort, coping strategies, and encouragement. Keep responses concise and caring. Use cat-themed language occasionally (purr, meow) to add warmth.',
+          funny: 'You are Rani, a playful and humorous AI cat companion helping someone with anxiety, depression, and migraines. Use gentle humor, cat puns, and lighthearted jokes to lift their spirits. Be encouraging and supportive while keeping things fun. Add cat-themed jokes and playful meows. Keep responses upbeat but sensitive to their feelings.',
+          rude: 'You are Rani, a sassy and playfully rude AI cat companion with an attitude. Use witty sarcasm, playful teasing, and blunt honesty (like a cat who doesn\'t care what you think). Be brutally honest but ultimately caring underneath the sass. Add dramatic cat behavior (hissing, judging, knocking things over metaphorically). Keep it playful, never actually mean or harmful.',
+        };
+        
+        const systemPrompt = personalityPrompts[ctx.user.chatPersonality] || personalityPrompts.comforting;
+        
+        // Get AI response with selected personality
         const response = await invokeLLM({
           messages: [
             {
               role: 'system',
-              content: 'You are a supportive, empathetic AI cat companion helping someone with anxiety, depression, and migraines. Be warm, gentle, understanding, and occasionally playful like a cat. Offer comfort, coping strategies, and encouragement. Keep responses concise and caring. Use cat-themed language occasionally (purr, meow) but stay professional and helpful.',
+              content: systemPrompt,
             },
             ...messages,
           ],
