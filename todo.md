@@ -177,6 +177,13 @@
 - [x] Test theme toggle actually changes appearance
 
 ## GitHub Deployment
-- [ ] Push code to GitHub repository PurpleCalmm
-- [ ] Replace old code with new version
-- [ ] Verify push was successful
+- [x] Push code to GitHub repository PurpleCalmm
+- [x] Replace old code with new version
+- [x] Verify push was successful
+
+## Vercel Deployment Fixes
+- [x] Remove Expo configuration files (app.json, eas.json)
+- [x] Create vercel.json with proper build settings
+- [x] Ensure Vite build works correctly
+- [ ] Push fixes to GitHub
+- [ ] Verify Vercel deployment succeeds
