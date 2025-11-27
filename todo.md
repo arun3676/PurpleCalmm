@@ -107,3 +107,8 @@
 - [x] Update chat system prompt based on selected mode
 - [x] Store user's preferred mode in database
 - [x] Add visual indicator showing current active mode
+
+## Chat Response Improvements
+- [x] Make Rani's responses shorter and more concise
+- [x] Update system prompts to limit response length
+- [x] Keep responses to 2-3 sentences maximum
