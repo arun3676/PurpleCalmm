@@ -152,3 +152,8 @@
 - [x] Add daily check-in with weight and notes
 - [x] Add milestone celebrations (25%, 50%, 75%, 100%)
 - [x] Make it motivating and useful for 45-day challenges
+
+## Weight Challenge Integration
+- [x] Replace old weight tracker in My Journeys with link to new Weight Challenge
+- [x] Add Weight Challenge card to My Journeys page
+- [x] Remove old weight tracking UI with graphs and notes
