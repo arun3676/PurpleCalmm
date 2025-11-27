@@ -189,3 +189,5 @@
 - [ ] Verify Vercel deployment succeeds
 
 - [x] Fix Vercel build command - run from root directory instead of client subdirectory
+
+- [x] Update Rani chat to use OpenAI API (GPT-4o-mini) instead of Manus AI

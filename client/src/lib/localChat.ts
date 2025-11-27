@@ -1,8 +1,8 @@
-// Local chat service using frontend Manus AI API
+// Local chat service using OpenAI API
 import { getChatMessages, saveChatMessage, getUserSettings } from './localStorage';
 
-const FRONTEND_API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FRONTEND_API_URL = import.meta.env.VITE_FRONTEND_FORGE_API_URL;
+// OpenAI API configuration - user will provide their own API key
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export async function sendChatMessage(userMessage: string): Promise<string> {
   // Save user message
@@ -15,8 +15,8 @@ export async function sendChatMessage(userMessage: string): Promise<string> {
   const settings = getUserSettings();
   const personality = settings.chatPersonality || 'comforting';
 
-  // Get chat history
-  const history = getChatMessages();
+  // Get chat history (last 10 messages to keep context manageable)
+  const history = getChatMessages().slice(-10);
   const messages = history.map(msg => ({
     role: msg.role,
     content: msg.content,
@@ -32,23 +32,41 @@ export async function sendChatMessage(userMessage: string): Promise<string> {
   const systemPrompt = personalityPrompts[personality];
 
   try {
-    // Call Manus AI API from frontend
-    const response = await fetch(`${FRONTEND_API_URL}/llm/chat`, {
+    // Validate API key
+    if (!OPENAI_API_KEY) {
+      console.error('Missing OpenAI API key');
+      throw new Error('Please add your OpenAI API key in the environment variables (VITE_OPENAI_API_KEY)');
+    }
+
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${FRONTEND_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,
         ],
+        max_tokens: 150, // Keep responses short
+        temperature: 0.8, // Slightly creative but consistent
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get AI response');
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      
+      if (response.status === 401) {
+        throw new Error('Invalid API key. Please check your OpenAI API key.');
+      } else if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      } else {
+        throw new Error(`API error: ${response.status}`);
+      }
     }
 
     const data = await response.json();
@@ -57,17 +75,29 @@ export async function sendChatMessage(userMessage: string): Promise<string> {
     // Save AI response
     saveChatMessage({
       role: 'assistant',
-      content: aiMessage,
+      content: aiMessage.trim(),
     });
 
-    return aiMessage;
+    return aiMessage.trim();
   } catch (error) {
     console.error('Chat error:', error);
-    const fallbackMessage = 'Meow... Something went wrong. Try again?';
+    
+    // Provide helpful error messages
+    let fallbackMessage = 'Meow... Something went wrong. Try again?';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        fallbackMessage = '🔑 Please add your OpenAI API key to use Rani chat. Check the console for details.';
+      } else if (error.message.includes('Rate limit')) {
+        fallbackMessage = '⏳ Too many messages! Please wait a moment before trying again.';
+      }
+    }
+    
     saveChatMessage({
       role: 'assistant',
       content: fallbackMessage,
     });
-    return fallbackMessage;
+    
+    throw error; // Re-throw to show error in UI
   }
 }
