@@ -18,11 +18,13 @@ export interface ChatMessage {
 
 export interface MigraineLog {
   id: string;
-  date: string;
   severity: number;
   duration?: number;
   triggers?: string[];
+  symptoms?: string[];
+  medication?: string;
   notes?: string;
+  startTime: Date;
   createdAt: number;
 }
 
@@ -114,7 +116,12 @@ export function clearChatHistory(): void {
 // Migraine functions
 export function getMigraineLogs(): MigraineLog[] {
   const data = localStorage.getItem('migraine_logs');
-  return data ? JSON.parse(data) : [];
+  if (!data) return [];
+  const logs = JSON.parse(data);
+  return logs.map((log: any) => ({
+    ...log,
+    startTime: typeof log.startTime === 'string' ? new Date(log.startTime) : log.startTime,
+  }));
 }
 
 export function saveMigraineLog(log: Omit<MigraineLog, 'id' | 'createdAt'>): void {
@@ -126,6 +133,12 @@ export function saveMigraineLog(log: Omit<MigraineLog, 'id' | 'createdAt'>): voi
   };
   logs.unshift(newLog);
   localStorage.setItem('migraine_logs', JSON.stringify(logs));
+}
+
+export function deleteMigraineLog(id: string): void {
+  const logs = getMigraineLogs();
+  const filtered = logs.filter(log => log.id !== id);
+  localStorage.setItem('migraine_logs', JSON.stringify(filtered));
 }
 
 // Weight tracking functions

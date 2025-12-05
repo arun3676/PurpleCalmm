@@ -6,11 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { getMigraineLogs, saveMigraineLog, deleteMigraineLog } from "@/lib/localStorage";
 
 const commonTriggers = ["Stress", "Lack of sleep", "Bright lights", "Loud noises", "Weather changes", "Certain foods", "Dehydration", "Screen time"];
 const commonSymptoms = ["Throbbing pain", "Nausea", "Light sensitivity", "Sound sensitivity", "Visual disturbances", "Dizziness", "Fatigue"];
@@ -23,10 +23,7 @@ export default function Migraine() {
   const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [startTime, setStartTime] = useState(new Date().toISOString().slice(0, 16));
-
-  const { data: logs, refetch } = trpc.migraine.list.useQuery();
-  const createLog = trpc.migraine.create.useMutation();
-  const deleteLog = trpc.migraine.delete.useMutation();
+  const [logs, setLogs] = useState(getMigraineLogs());
 
   const toggleTrigger = (trigger: string) => {
     setSelectedTriggers((prev) =>
@@ -44,7 +41,7 @@ export default function Migraine() {
     e.preventDefault();
 
     try {
-      await createLog.mutateAsync({
+      saveMigraineLog({
         severity: severity[0],
         duration: duration ? parseInt(duration) : undefined,
         triggers: selectedTriggers.length > 0 ? selectedTriggers : undefined,
@@ -65,17 +62,18 @@ export default function Migraine() {
       setSelectedSymptoms([]);
       setStartTime(new Date().toISOString().slice(0, 16));
       
-      refetch();
+      // Refresh logs
+      setLogs(getMigraineLogs());
     } catch (error) {
       toast.error("Failed to save log");
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: string) => {
     try {
-      await deleteLog.mutateAsync({ id });
+      deleteMigraineLog(id);
       toast.success("Log deleted");
-      refetch();
+      setLogs(getMigraineLogs());
     } catch (error) {
       toast.error("Failed to delete log");
     }
@@ -188,7 +186,7 @@ export default function Migraine() {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={createLog.isPending}>
+              <Button type="submit" className="w-full">
                 <Plus className="mr-2 h-4 w-4" />
                 Save Migraine Log
               </Button>
@@ -222,17 +220,16 @@ export default function Migraine() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(log.id)}
-                        disabled={deleteLog.isPending}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                     
-                    {log.triggers && (
+                    {log.triggers && log.triggers.length > 0 && (
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Triggers:</p>
                         <div className="flex flex-wrap gap-1">
-                          {JSON.parse(log.triggers).map((trigger: string) => (
+                          {log.triggers.map((trigger: string) => (
                             <Badge key={trigger} variant="secondary" className="text-xs">
                               {trigger}
                             </Badge>
@@ -241,11 +238,11 @@ export default function Migraine() {
                       </div>
                     )}
                     
-                    {log.symptoms && (
+                    {log.symptoms && log.symptoms.length > 0 && (
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Symptoms:</p>
                         <div className="flex flex-wrap gap-1">
-                          {JSON.parse(log.symptoms).map((symptom: string) => (
+                          {log.symptoms.map((symptom: string) => (
                             <Badge key={symptom} variant="secondary" className="text-xs">
                               {symptom}
                             </Badge>

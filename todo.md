@@ -191,3 +191,7 @@
 - [x] Fix Vercel build command - run from root directory instead of client subdirectory
 
 - [x] Update Rani chat to use OpenAI API (GPT-4o-mini) instead of Manus AI
+
+- [ ] Add daily reset logic to cuddles counter (reset at midnight each day)
+
+- [x] Fix migraine tracking - convert to localStorage (local-only) to resolve "failed to save log" error
