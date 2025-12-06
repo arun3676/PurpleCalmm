@@ -5,12 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ArrowLeft, Plus, Trash2, Lightbulb, X } from "lucide-react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { getMigraineLogs, saveMigraineLog, deleteMigraineLog } from "@/lib/localStorage";
+import { getMigraineLogs, saveMigraineLog, deleteMigraineLog, MigraineLog } from "@/lib/localStorage";
+import { generateMigraineTips } from "@/lib/migraineAI";
+import { Streamdown } from "streamdown";
 
 const commonTriggers = ["Stress", "Lack of sleep", "Bright lights", "Loud noises", "Weather changes", "Certain foods", "Dehydration", "Screen time"];
 const commonSymptoms = ["Throbbing pain", "Nausea", "Light sensitivity", "Sound sensitivity", "Visual disturbances", "Dizziness", "Fatigue"];
@@ -24,6 +26,9 @@ export default function Migraine() {
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [startTime, setStartTime] = useState(new Date().toISOString().slice(0, 16));
   const [logs, setLogs] = useState(getMigraineLogs());
+  const [showTips, setShowTips] = useState(false);
+  const [tips, setTips] = useState("");
+  const [tipsLoading, setTipsLoading] = useState(false);
 
   const toggleTrigger = (trigger: string) => {
     setSelectedTriggers((prev) =>
@@ -41,7 +46,8 @@ export default function Migraine() {
     e.preventDefault();
 
     try {
-      saveMigraineLog({
+      const newLog: MigraineLog = {
+        id: Date.now().toString(),
         severity: severity[0],
         duration: duration ? parseInt(duration) : undefined,
         triggers: selectedTriggers.length > 0 ? selectedTriggers : undefined,
@@ -49,8 +55,10 @@ export default function Migraine() {
         medication: medication || undefined,
         notes: notes || undefined,
         startTime: new Date(startTime),
-      });
+        createdAt: Date.now(),
+      };
 
+      saveMigraineLog(newLog);
       toast.success("Migraine log saved");
       
       // Reset form
@@ -64,6 +72,13 @@ export default function Migraine() {
       
       // Refresh logs
       setLogs(getMigraineLogs());
+      
+      // Generate and show tips
+      setTipsLoading(true);
+      const generatedTips = await generateMigraineTips(newLog);
+      setTips(generatedTips);
+      setShowTips(true);
+      setTipsLoading(false);
     } catch (error) {
       toast.error("Failed to save log");
     }
@@ -81,6 +96,44 @@ export default function Migraine() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 dark:from-rose-950 dark:via-pink-950 dark:to-purple-950">
+      {/* Tips Modal */}
+      {showTips && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-amber-500" />
+                <CardTitle>Relief Tips</CardTitle>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {tipsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              ) : (
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <Streamdown>{tips}</Streamdown>
+                </div>
+              )}
+              <Button onClick={() => setShowTips(false)} className="w-full">
+                Got it, thanks!
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <header className="border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
