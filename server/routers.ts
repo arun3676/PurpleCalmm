@@ -1,5 +1,5 @@
-import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { COOKIE_NAME } from "../shared/const";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
@@ -145,6 +145,44 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const { deleteMigraineLog } = await import('./db');
         await deleteMigraineLog(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  panic: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserPanicAttackLogs } = await import('./db');
+      return getUserPanicAttackLogs(ctx.user.id);
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        severity: z.number().min(1).max(10),
+        duration: z.number().optional(),
+        triggers: z.array(z.string()).optional(),
+        symptoms: z.array(z.string()).optional(),
+        copingStrategies: z.array(z.string()).optional(),
+        notes: z.string().optional(),
+        startTime: z.date(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createPanicAttackLog } = await import('./db');
+        await createPanicAttackLog({
+          userId: ctx.user.id,
+          severity: input.severity,
+          duration: input.duration,
+          triggers: input.triggers ? JSON.stringify(input.triggers) : null,
+          symptoms: input.symptoms ? JSON.stringify(input.symptoms) : null,
+          copingStrategies: input.copingStrategies ? JSON.stringify(input.copingStrategies) : null,
+          notes: input.notes,
+          startTime: input.startTime,
+        });
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { deletePanicAttackLog } = await import('./db');
+        await deletePanicAttackLog(input.id, ctx.user.id);
         return { success: true };
       }),
   }),

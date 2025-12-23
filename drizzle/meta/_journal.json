@@ -29,6 +29,13 @@
       "when": 1764201752762,
       "tag": "0003_thin_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1766473637460,
+      "tag": "0004_sad_moondragon",
+      "breakpoints": true
     }
   ]
 }

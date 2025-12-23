@@ -142,3 +142,21 @@ export const chatMessages = mysqlTable("chat_messages", {
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = typeof chatMessages.$inferInsert;
+/**
+ * Panic attack logs
+ */
+export const panicAttackLogs = mysqlTable("panic_attack_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  severity: int("severity").notNull(), // 1-10 scale
+  duration: int("duration"), // minutes
+  triggers: text("triggers"), // JSON array
+  symptoms: text("symptoms"), // JSON array
+  copingStrategies: text("coping_strategies"), // JSON array - what helped
+  notes: text("notes"),
+  startTime: timestamp("start_time").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PanicAttackLog = typeof panicAttackLogs.$inferSelect;
+export type InsertPanicAttackLog = typeof panicAttackLogs.$inferInsert;

@@ -175,3 +175,5 @@
 - [x] Ensure dark mode CSS variables are properly defined
 - [x] Enable switchable prop in ThemeProvider
 - [x] Test theme toggle actually changes appearance
+
+- [x] Add database persistence for migraine logs and panic attacks (prevent data loss)

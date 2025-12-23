@@ -16,7 +16,9 @@ import {
   btsJournal,
   InsertBtsJournalEntry,
   weightTracking,
-  InsertWeightEntry
+  InsertWeightEntry,
+  panicAttackLogs,
+  InsertPanicAttackLog
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -238,4 +240,29 @@ export async function deleteWeightEntry(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(weightTracking).where(eq(weightTracking.id, id));
+}
+
+// Panic attack queries
+export async function createPanicAttackLog(log: InsertPanicAttackLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(panicAttackLogs).values(log);
+}
+
+export async function getUserPanicAttackLogs(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(panicAttackLogs).where(eq(panicAttackLogs.userId, userId)).orderBy(desc(panicAttackLogs.startTime)).limit(limit);
+}
+
+export async function updatePanicAttackLog(id: number, userId: number, data: Partial<InsertPanicAttackLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(panicAttackLogs).set(data).where(and(eq(panicAttackLogs.id, id), eq(panicAttackLogs.userId, userId)));
+}
+
+export async function deletePanicAttackLog(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(panicAttackLogs).where(and(eq(panicAttackLogs.id, id), eq(panicAttackLogs.userId, userId)));
 }
