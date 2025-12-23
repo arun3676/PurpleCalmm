@@ -1,7 +1,17 @@
 // Local chat service using OpenAI API
 import { getChatMessages, saveChatMessage, getUserSettings } from './localStorage';
 
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+// Support multiple OpenAI API key environment variable names
+const OPENAI_API_KEY = 
+  import.meta.env.VITE_OPENAI_API_KEY || 
+  import.meta.env.OPENAI_API_KEY ||
+  import.meta.env.VITE_OPENAI_KEY;
+
+// Support multiple model environment variable names
+const OPENAI_MODEL = 
+  import.meta.env.OPENAI_MODEL || 
+  import.meta.env.VITE_OPENAI_MODEL ||
+  'gpt-4o-mini'; // Default model
 
 export async function sendChatMessage(userMessage: string): Promise<string> {
   // Save user message
@@ -32,7 +42,7 @@ export async function sendChatMessage(userMessage: string): Promise<string> {
 
   // Check if API key is configured
   if (!OPENAI_API_KEY) {
-    const fallbackMessage = 'Meow... I need an OpenAI API key to chat. Please add VITE_OPENAI_API_KEY to your environment variables.';
+    const fallbackMessage = 'Meow... I need an OpenAI API key to chat. Please add OPENAI_API_KEY or VITE_OPENAI_API_KEY to your environment variables.';
     saveChatMessage({
       role: 'assistant',
       content: fallbackMessage,
@@ -49,7 +59,7 @@ export async function sendChatMessage(userMessage: string): Promise<string> {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: OPENAI_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,
