@@ -1,8 +1,7 @@
-// Local chat service using frontend Manus AI API
+// Local chat service using OpenAI API
 import { getChatMessages, saveChatMessage, getUserSettings } from './localStorage';
 
-const FRONTEND_API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FRONTEND_API_URL = import.meta.env.VITE_FRONTEND_FORGE_API_URL;
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export async function sendChatMessage(userMessage: string): Promise<string> {
   // Save user message
@@ -31,24 +30,39 @@ export async function sendChatMessage(userMessage: string): Promise<string> {
 
   const systemPrompt = personalityPrompts[personality];
 
+  // Check if API key is configured
+  if (!OPENAI_API_KEY) {
+    const fallbackMessage = 'Meow... I need an OpenAI API key to chat. Please add VITE_OPENAI_API_KEY to your environment variables.';
+    saveChatMessage({
+      role: 'assistant',
+      content: fallbackMessage,
+    });
+    return fallbackMessage;
+  }
+
   try {
-    // Call Manus AI API from frontend
-    const response = await fetch(`${FRONTEND_API_URL}/llm/chat`, {
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${FRONTEND_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,
         ],
+        max_tokens: 150,
+        temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get AI response');
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
